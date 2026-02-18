@@ -4,6 +4,8 @@ BIN_DIR = bin
 
 CC      = gcc
 CFLAGS  = -Wall -Wextra -O2 -I$(LIB_DIR)
+MPICC   = mpicc
+
 
 
 SERIAL_SRC   = $(SRC_DIR)/stencil_template_serial.c
@@ -22,16 +24,24 @@ $(SERIAL_BIN): $(SERIAL_SRC)
 
 $(PARALLEL_BIN): $(PARALLEL_SRC)
 	mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) $< -o $@
+	$(MPICC) $(CFLAGS) $< -o $@
 .PHONY: serial parallel run-serial run-parallel run clean
 
 # --- build ---
 serial: $(SERIAL_BIN)
 
+clean:
+	rm -rf $(BIN_DIR)
+
 parallel: $(PARALLEL_BIN)
 
 # --- run ---
 run-serial: serial
+	@echo "Running SERIAL..."
+	./$(SERIAL_BIN)
+
+run-serial:
+	$(MAKE) serial
 	@echo "Running SERIAL..."
 	./$(SERIAL_BIN)
 
