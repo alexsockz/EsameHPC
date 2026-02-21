@@ -1,7 +1,6 @@
 #include "stencil_template_parallel.h"
 
 int memory_allocate(const int *neighbours,
-                    const vec2_t N,
                     buffers_t *buffers_ptr,
                     plane_t *planes_ptr)
 
@@ -59,19 +58,19 @@ int memory_allocate(const int *neighbours,
   // allocate memory for data
   // we allocate the space needed for the plane plus a contour frame
   // that will contains data form neighbouring MPI tasks
-  unsigned int frame_size = (planes_ptr[OLD].size[_x_] + 2) * (planes_ptr[OLD].size[_y_] + 2);
+  unsigned int frame_size = (planes_ptr[OLD].size[_x_]) * (planes_ptr[OLD].size[_y_]+2);
 
   planes_ptr[OLD].data = (double *)malloc(frame_size * sizeof(double));
   if (planes_ptr[OLD].data == NULL)
-    // manage the malloc fail
-    ;
-  memset(planes_ptr[OLD].data, 0, frame_size * sizeof(double));
+    return 1;
+  else
+    memset(planes_ptr[OLD].data, 0, frame_size * sizeof(double));
 
   planes_ptr[NEW].data = (double *)malloc(frame_size * sizeof(double));
   if (planes_ptr[NEW].data == NULL)
-    // manage the malloc fail
-    ;
-  memset(planes_ptr[NEW].data, 0, frame_size * sizeof(double));
+    return 1;
+  else
+    memset(planes_ptr[NEW].data, 0, frame_size * sizeof(double));
 
   // ··················································
   // buffers for north and south communication
@@ -90,8 +89,18 @@ int memory_allocate(const int *neighbours,
   // ··················································
   // allocate buffers
   //
-
   // ··················································
 
+  //DOING ALL OF THIS EXPLICITLY TO REMEMBER WHAT IT MEANS
+  //pointing to north and south for
+  buffers_ptr[OLD][NORTH]=&(planes_ptr[OLD].data[0]);
+  buffers_ptr[OLD][SOUTH]=&(planes_ptr[OLD].data[planes_ptr[OLD].size[_x_]+1]);
+  buffers_ptr[NEW][NORTH]=&(planes_ptr[NEW].data[0]);
+  buffers_ptr[NEW][SOUTH]=&(planes_ptr[NEW].data[planes_ptr[NEW].size[_x_]+1]);
+  //allocating 2 buffers for east and west 
+  buffers_ptr[OLD][EAST]=(double *)malloc(planes_ptr[OLD].size[_y_]*sizeof(double));
+  buffers_ptr[OLD][WEST]=(double *)malloc(planes_ptr[OLD].size[_y_]*sizeof(double));
+  buffers_ptr[NEW][EAST]=(double *)malloc(planes_ptr[NEW].size[_y_]*sizeof(double));
+  buffers_ptr[NEW][WEST]=(double *)malloc(planes_ptr[NEW].size[_y_]*sizeof(double));
   return 0;
 }

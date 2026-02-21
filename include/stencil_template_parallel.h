@@ -31,13 +31,29 @@
 typedef unsigned int uint;
 
 typedef uint vec2_t[2];
-typedef double *restrict buffers_t[4];
+typedef double *restrict buffers_t[4]; //north south will point to matrix, east west will point to an array used as buffer
 
 typedef struct
 {
     double *restrict data;
     vec2_t size;
 } plane_t;
+
+
+/* ==========================================================================
+   =                                                                        =
+   =   Output                                                               =
+   ========================================================================== */
+
+int get_total_energy(plane_t*,
+                            double*);
+
+int output_energy_stat(int,
+                       plane_t *,
+                       double,
+                       int,
+                       MPI_Comm *);
+
 
 /* ==========================================================================
    =                                                                        =
@@ -47,7 +63,7 @@ typedef struct
 int initialize_sources(int,
                        int,
                        MPI_Comm *,
-                       uint[2],
+                       const uint[2],
                        int,
                        int *,
                        vec2_t **);
@@ -93,25 +109,10 @@ extern int update_plane(const int,
    ========================================================================== */
 
 int memory_allocate(const int *,
-                    const vec2_t,
                     buffers_t *,
                     plane_t *);
 
-int memory_release(plane_t *);
-
-/* ==========================================================================
-   =                                                                        =
-   =   Output                                                               =
-   ========================================================================== */
-
-inline int get_total_energy(plane_t*,
-                            double*);
-
-int output_energy_stat(int,
-                       plane_t *,
-                       double,
-                       int,
-                       MPI_Comm *);
+int memory_release(plane_t *, buffers_t *);
 
 /* ==========================================================================
    =                                                                        =

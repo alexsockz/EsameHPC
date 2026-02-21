@@ -15,7 +15,8 @@
 int main(int argc, char **argv)
 {
   MPI_Comm myCOMM_WORLD;
-  int Rank, Ntasks;
+  int Rank;
+  int Ntasks;
   uint neighbours[4];
 
   int Niterations;
@@ -28,7 +29,7 @@ int main(int argc, char **argv)
   double energy_per_source;
 
   plane_t planes[2];
-  buffers_t buffers[2];
+  buffers_t buffers[2]; //old new, each has 4
 
   int output_energy_stat_perstep;
 

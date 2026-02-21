@@ -21,6 +21,8 @@ int initialize(MPI_Comm *Comm,
   int halt = 0;
   int ret;
   int verbose = 0;
+  
+  optind = 1; //reset index to say "look at the first option"
 
   // ··································································
   // set deffault values
@@ -39,8 +41,8 @@ int initialize(MPI_Comm *Comm,
     // manage the situation
   }
 
-  planes[OLD].size[0] = planes[OLD].size[0] = 0;
-  planes[NEW].size[0] = planes[NEW].size[0] = 0;
+  planes[OLD].size[0] = 0;
+  planes[NEW].size[0] = 0;
 
   for (int i = 0; i < 4; i++)
     neighbours[i] = MPI_PROC_NULL;
@@ -59,6 +61,22 @@ int initialize(MPI_Comm *Comm,
     {
       switch (opt)
       {
+      default:
+      case 'h':
+
+      {
+        if (Me == 0)
+          printf("\nvalid options are ( values btw [] are the default values ):\n"
+                 "-x    x size of the plate [10000]\n"
+                 "-y    y size of the plate [10000]\n"
+                 "-e    how many energy sources on the plate [4]\n"
+                 "-E    how many energy sources on the plate [1.0]\n"
+                 "-n    how many iterations [1000]\n"
+                 "-p    whether periodic boundaries applies  [0 = false]\n\n");
+        halt = 1;
+      }
+      break;
+
       case 'x':
         (*S)[_x_] = (uint)atoi(optarg);
         break;
@@ -90,20 +108,6 @@ int initialize(MPI_Comm *Comm,
       case 'v':
         verbose = atoi(optarg);
         break;
-
-      case 'h':
-      {
-        if (Me == 0)
-          printf("\nvalid options are ( values btw [] are the default values ):\n"
-                 "-x    x size of the plate [10000]\n"
-                 "-y    y size of the plate [10000]\n"
-                 "-e    how many energy sources on the plate [4]\n"
-                 "-E    how many energy sources on the plate [1.0]\n"
-                 "-n    how many iterations [1000]\n"
-                 "-p    whether periodic boundaries applies  [0 = false]\n\n");
-        halt = 1;
-      }
-      break;
 
       case ':':
         printf("option -%c requires an argument\n", optopt);
@@ -146,10 +150,14 @@ int initialize(MPI_Comm *Comm,
 
   if (dimensions == 1)
   {
-    if ((*S)[_x_] >= (*S)[_y_])
-      Grid[_x_] = Ntasks, Grid[_y_] = 1;
-    else
-      Grid[_x_] = 1, Grid[_y_] = Ntasks;
+    if ((*S)[_x_] >= (*S)[_y_]){
+      Grid[_x_] = Ntasks;
+      Grid[_y_] = 1;
+    }
+    else{
+      Grid[_x_] = 1;
+      Grid[_y_] = Ntasks;
+    }
   }
   else
   {
@@ -157,14 +165,20 @@ int initialize(MPI_Comm *Comm,
     uint *factors;
     uint first = 1;
     ret = simple_factorization(Ntasks, &Nf, &factors);
+    if (ret==1)
+      return 1;
 
     for (int i = 0; (i < Nf) && ((Ntasks / first) / first > formfactor); i++)
       first *= factors[i];
 
-    if ((*S)[_x_] > (*S)[_y_])
-      Grid[_x_] = Ntasks / first, Grid[_y_] = first;
-    else
-      Grid[_x_] = first, Grid[_y_] = Ntasks / first;
+    if ((*S)[_x_] > (*S)[_y_]){
+      Grid[_x_] = Ntasks / first;
+      Grid[_y_] = first;
+    }
+    else{
+      Grid[_x_] = first;
+      Grid[_y_] = Ntasks / first;
+    }
   }
 
   (*N)[_x_] = Grid[_x_];
@@ -265,14 +279,16 @@ int initialize(MPI_Comm *Comm,
   // ··································································
   // allocae the needed memory
   //
-  ret = memory_allocate( plans, ... 
-  
+  ret = memory_allocate(neighbours,buffers,planes);
+  if (ret==1)
+    return 1;
 
   // ··································································
   // allocae the heat sources
   //
   ret = initialize_sources( Me, Ntasks, Comm, mysize, *Nsources, Nsources_local, Sources_local );
-  
+  if (ret==1)
+    return 1;
   
   return 0;
 }
