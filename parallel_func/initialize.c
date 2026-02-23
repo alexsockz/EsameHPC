@@ -16,7 +16,8 @@ int initialize(MPI_Comm *Comm,
                vec2_t **Sources_local,
                double *energy_per_source, // how much heat per source
                plane_t *planes,
-               buffers_t *buffers)
+               buffers_t *buffers,
+               buffers_t *borders_ptr)
 {
   int halt = 0;
   int ret;
@@ -49,8 +50,10 @@ int initialize(MPI_Comm *Comm,
 
   for (int b = 0; b < 2; b++)
     for (int d = 0; d < 4; d++)
+    {
       buffers[b][d] = NULL;
-
+      borders_ptr[b][d] = NULL;
+    }
   // ··································································
   // process the commadn line
   //
@@ -279,14 +282,14 @@ int initialize(MPI_Comm *Comm,
   // ··································································
   // allocae the needed memory
   //
-  ret = memory_allocate(neighbours,buffers,planes);
+  ret = memory_allocate(neighbours, buffers, borders_ptr, planes);
   if (ret==1)
     return 1;
 
   // ··································································
   // allocae the heat sources
   //
-  ret = initialize_sources( Me, Ntasks, Comm, mysize, *Nsources, Nsources_local, Sources_local );
+  ret = initialize_sources(Me, Ntasks, Comm, mysize, *Nsources, Nsources_local, Sources_local);
   if (ret==1)
     return 1;
   

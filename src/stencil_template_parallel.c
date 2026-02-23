@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 
   plane_t planes[2];
   buffers_t buffers[2]; //old new, each has 4
-
+  buffers_t pointers_to_borders[2];
   int output_energy_stat_perstep;
 
   /* initialize MPI envrionment */
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
   int ret = initialize(&myCOMM_WORLD, Rank, Ntasks, argc, argv, &S, &N, &periodic, &output_energy_stat_perstep,
                        neighbours, &Niterations,
                        &Nsources, &Nsources_local, &Sources_local, &energy_per_source,
-                       &planes[0], &buffers[0]);
+                       &planes[0], &buffers[0], pointers_to_borders);
 
   if (ret)
   {
@@ -71,14 +71,49 @@ int main(int argc, char **argv)
   int current = OLD;
   double t1 = MPI_Wtime(); /* take wall-clock time */
 
-  for (int iter = 0; iter < Niterations; ++iter)
+  //somehow fit this in a cycle
+  // important for the future 
+  // int i, j, k;
+  // #pragma omp parallel private(i,k) means that i and k will be unique for each thread and not shared
+  
+  #pragma omp parallel
+  {
+    int myid=omp_get_thread_num();
+    
+    #pragma omp masked filter(myid%4)
+    {
 
+      // #define _x_ 0
+      // #define _y_ 1
+
+      // #define NORTH 0  _x_
+      // #define SOUTH 1  _x_
+      // #define EAST 2   _y_
+      // #define WEST 3   _y_
+      //incoming from, so if the buffer sent is south it needs to be put in in north
+      MPI_Status status;
+      int x_or_y=myid>>1; //0 if 0 or 1 and 1 if 2 or 3
+      int source=(myid&2)|(~(myid&1)); //inverts 0 to 1 or 2 to 3 and vice versa
+      //check the various pointers of this line
+      //current or not current? not sure, i think not current aka next
+      MPI_Recv(&buffers[!current][myid], N[x_or_y],MPI_DOUBLE,source,BORDER_MESSAGE_TAG,&myCOMM_WORLD,&status);
+    }
+    //TODO parallelize injection, but maybe not so worth it
+    //do it only IF Nsources >>> nthread
+    //something like this
+    #pragma omp masked filter(5)
+    {
+      inject_energy(periodic, Nsources_local, Sources_local, energy_per_source, &planes[current], N);
+    }
+
+  }
+
+  for (int iter = 0; iter < Niterations; ++iter)
   {
 
     MPI_Request reqs[8];
 
     /* new energy from sources */
-    inject_energy(periodic, Nsources_local, Sources_local, energy_per_source, &planes[current], N);
 
     /* -------------------------------------- */
 
@@ -108,7 +143,7 @@ int main(int argc, char **argv)
 
   output_energy_stat(-1, &planes[!current], Niterations * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
 
-  memory_release(buffers, planes);
+  memory_release(buffers, planes, pointers_to_borders);
 
   MPI_Finalize();
   return 0;

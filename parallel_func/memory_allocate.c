@@ -2,6 +2,7 @@
 
 int memory_allocate(const int *neighbours,
                     buffers_t *buffers_ptr,
+                    buffers_t *borders_ptr,
                     plane_t *planes_ptr)
 
 {
@@ -58,7 +59,9 @@ int memory_allocate(const int *neighbours,
   // allocate memory for data
   // we allocate the space needed for the plane plus a contour frame
   // that will contains data form neighbouring MPI tasks
-  unsigned int frame_size = (planes_ptr[OLD].size[_x_]) * (planes_ptr[OLD].size[_y_]+2);
+  int x_size= planes_ptr[OLD].size[_x_];
+  int y_size= planes_ptr[OLD].size[_y_];
+  unsigned int frame_size = (x_size) * (y_size+2);
 
   planes_ptr[OLD].data = (double *)malloc(frame_size * sizeof(double));
   if (planes_ptr[OLD].data == NULL)
@@ -93,14 +96,31 @@ int memory_allocate(const int *neighbours,
 
   //DOING ALL OF THIS EXPLICITLY TO REMEMBER WHAT IT MEANS
   //pointing to north and south for
-  buffers_ptr[OLD][NORTH]=&(planes_ptr[OLD].data[0]);
-  buffers_ptr[OLD][SOUTH]=&(planes_ptr[OLD].data[planes_ptr[OLD].size[_x_]+1]);
-  buffers_ptr[NEW][NORTH]=&(planes_ptr[NEW].data[0]);
-  buffers_ptr[NEW][SOUTH]=&(planes_ptr[NEW].data[planes_ptr[NEW].size[_x_]+1]);
+  buffers_ptr[OLD][NORTH] = &(planes_ptr[OLD].data[0]);
+  buffers_ptr[OLD][SOUTH] = &(planes_ptr[OLD].data[(y_size + 1) * x_size]);
+  buffers_ptr[NEW][NORTH] = &(planes_ptr[NEW].data[0]);
+  buffers_ptr[NEW][SOUTH] = &(planes_ptr[NEW].data[(y_size + 1) * x_size]);
   //allocating 2 buffers for east and west 
-  buffers_ptr[OLD][EAST]=(double *)malloc(planes_ptr[OLD].size[_y_]*sizeof(double));
-  buffers_ptr[OLD][WEST]=(double *)malloc(planes_ptr[OLD].size[_y_]*sizeof(double));
-  buffers_ptr[NEW][EAST]=(double *)malloc(planes_ptr[NEW].size[_y_]*sizeof(double));
-  buffers_ptr[NEW][WEST]=(double *)malloc(planes_ptr[NEW].size[_y_]*sizeof(double));
+  buffers_ptr[OLD][WEST]=(double *)malloc(y_size*sizeof(double));
+  buffers_ptr[OLD][EAST]=(double *)malloc(y_size*sizeof(double));
+  buffers_ptr[NEW][WEST]=(double *)malloc(y_size*sizeof(double));
+  buffers_ptr[NEW][EAST]=(double *)malloc(y_size*sizeof(double));
+  
+  // ··················································
+  // pointers to borders to make modification of just them easier
+  //
+  // ··················································
+  for(int t=0; t<2; ++t)
+  {
+    //pointers to EAST and NORTH are the same because i can't force c to accept that 
+    //by summing 1 to a pointer i actually want it to shift by _x_
+    //so for now i just point to such a place in the matrix
+    //in the future i will have 2 matrices, one row major and one column major
+      borders_ptr[t][NORTH] = &(planes_ptr[t].data[x_size]);
+      borders_ptr[t][SOUTH] = &(planes_ptr[t].data[y_size * x_size]);
+      borders_ptr[t][WEST] = &planes_ptr[t].data[x_size]; //will need to be changed 
+      borders_ptr[t][EAST] = &planes_ptr[t].data[(2*x_size)-1];
+  }
+
   return 0;
 }

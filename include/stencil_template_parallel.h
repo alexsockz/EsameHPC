@@ -28,6 +28,9 @@
 #define _x_ 0
 #define _y_ 1
 
+#define GENERAL_USE_TAG 0
+#define BORDER_MESSAGE_TAG 1
+
 typedef unsigned int uint;
 
 typedef uint vec2_t[2];
@@ -84,6 +87,7 @@ int initialize(MPI_Comm *,
                vec2_t **,
                double *,
                plane_t *,
+               buffers_t *,
                buffers_t *);
 
 /* ==========================================================================
@@ -110,9 +114,10 @@ extern int update_plane(const int,
 
 int memory_allocate(const int *,
                     buffers_t *,
+                    buffers_t*,
                     plane_t *);
 
-int memory_release(plane_t *, buffers_t *);
+int memory_release(plane_t *, buffers_t *, buffers_t *);
 
 /* ==========================================================================
    =                                                                        =

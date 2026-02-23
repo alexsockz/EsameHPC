@@ -13,6 +13,7 @@ int is_in_buffer(const vec2_t src, const vec2_t mysize)
     // The buffer is at y=0 and y=mysize[_y_]+1 (ghost layers)
     // Valid sources must have y in [1, mysize[_y_]]
     return (src[_y_] == 0 || src[_y_] == mysize[_y_] + 1);
+    //it will be perview of the energy injection to check if it falls in the buffers in the end
 }
 
 int main(int argc, char **argv)
@@ -34,11 +35,13 @@ int main(int argc, char **argv)
         int ret = initialize_sources(Me, Ntasks, &Comm, mysize, Nsources, &Nsources_local, &Sources_local);
         assert(ret == 0);
 
-        // Each local source must be within the valid region (not in buffer)
+        // Each local source must be within the valid region (not in halo/buffer rows)
         for (int i = 0; i < Nsources_local; ++i)
         {
-            //assert(Sources_local[i][_x_] >= 0 && Sources_local[i][_x_] < mysize[_x_]);
+            // x in [0, mysize[_x_]-1], y in [1, mysize[_y_]]
+            assert(Sources_local[i][_x_] >= 0 && Sources_local[i][_x_] < mysize[_x_]);
             assert(Sources_local[i][_y_] >= 1 && Sources_local[i][_y_] <= mysize[_y_]);
+            // Should not be in buffer/halo rows
             assert(!is_in_buffer(Sources_local[i], mysize));
         }
 
@@ -92,7 +95,7 @@ int main(int argc, char **argv)
 
         for (int i = 0; i < Nsources_local; ++i)
         {
-            // assert(Sources_local[i][_x_] >= 0 && Sources_local[i][_x_] < mysize[_x_]);
+            assert(Sources_local[i][_x_] >= 0 && Sources_local[i][_x_] < mysize[_x_]);
             assert(Sources_local[i][_y_] >= 1 && Sources_local[i][_y_] <= mysize[_y_]);
             assert(!is_in_buffer(Sources_local[i], mysize));
         }
@@ -145,10 +148,10 @@ int main(int argc, char **argv)
 
         if (Me == 0)
         {
-            // Check all sources are within valid region and not in buffer
+            // Check all sources are within valid region and not in buffer/halo rows
             for (int i = 0; i < total_sources; ++i)
             {
-                // assert(all_sources[i][_x_] >= 0 && all_sources[i][_x_] < mysize[_x_]);
+                assert(all_sources[i][_x_] >= 0 && all_sources[i][_x_] < mysize[_x_]);
                 assert(all_sources[i][_y_] >= 1 && all_sources[i][_y_] <= mysize[_y_]);
                 assert(!is_in_buffer(all_sources[i], mysize));
             }

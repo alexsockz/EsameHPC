@@ -39,8 +39,8 @@ int main(int argc, char **argv)
 
   int current = OLD;
 
-  if (injection_frequency > 1)
-    inject_energy(periodic, Nsources, Sources, energy_per_source, S, planes[current]);
+  // if (injection_frequency > 1)
+  //   inject_energy(periodic, Nsources, Sources, energy_per_source, S, planes[current]);
 
   for (int iter = 0; iter < Niterations; iter++)
 

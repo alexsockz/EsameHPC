@@ -7,6 +7,7 @@ int main() {
     // Setup
     plane_t planes[2];
     buffers_t buffers[2];
+    buffers_t borders_ptr[2];
     vec2_t N = {4, 4}; // 4x4 grid
     int neighbours[4] = {1, 1, 1, 1}; // dummy values
 
@@ -17,7 +18,7 @@ int main() {
     planes[NEW].size[_y_] = N[_y_];
 
     // Call the function
-    int ret = memory_allocate(neighbours, buffers, planes);
+    int ret = memory_allocate(neighbours, buffers, planes, borders_ptr);
 
     // Test allocations
     assert(ret == 0);
@@ -26,9 +27,9 @@ int main() {
 
     // Test north/south pointers
     assert(buffers[OLD][NORTH] == &planes[OLD].data[0]);
-    assert(buffers[OLD][SOUTH] == &planes[OLD].data[planes[OLD].size[_x_]+1]);
+    assert(buffers[OLD][SOUTH] == &planes[OLD].data[(planes[OLD].size[_y_] + 1) * planes[OLD].size[_x_]]);
     assert(buffers[NEW][NORTH] == &planes[NEW].data[0]);
-    assert(buffers[NEW][SOUTH] == &planes[NEW].data[planes[NEW].size[_x_]+1]);
+    assert(buffers[NEW][SOUTH] == &planes[NEW].data[(planes[NEW].size[_y_] + 1) * planes[NEW].size[_x_]]);
 
 
     planes[OLD].data[5]=1;
