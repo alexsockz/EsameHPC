@@ -24,9 +24,11 @@ inline int update_plane(const int periodic,
 
     double *restrict old = oldplane->data;
     double *restrict new = newplane->data;
+    double alpha = 0.6;
+    double alpha_inverse=1/ 4.0 * (1 - alpha);
 
-    for (uint j = 1; j <= ysize; j++)
-        for (uint i = 1; i <= xsize; i++)
+    for (uint j = 2; j <= ysize-1; j++)//exclude borders and halo
+        for (uint i = 1; i <= xsize; i++)//exclude borders
         {
 
             // NOTE: (i-1,j), (i+1,j), (i,j-1) and (i,j+1) always exist even
@@ -39,10 +41,11 @@ inline int update_plane(const int periodic,
             //
             // HINT : check the serial version for some optimization
             //
-            new[IDX(i, j)] =
-                old[IDX(i, j)] / 2.0 + (old[IDX(i - 1, j)] + old[IDX(i + 1, j)] +
-                                        old[IDX(i, j - 1)] + old[IDX(i, j + 1)]) /
-                                           4.0 / 2.0;
+
+            double result = old[IDX(i, j)] * alpha;
+            double sum_i = (old[IDX(i - 1, j)] + old[IDX(i + 1, j)]) *alpha_inverse;
+            double sum_j = (old[IDX(i, j - 1)] + old[IDX(i, j + 1)]) *alpha_inverse;
+            result += (sum_i + sum_j);
         }
 
     if (periodic)

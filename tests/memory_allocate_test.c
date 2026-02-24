@@ -18,7 +18,7 @@ int main() {
     planes[NEW].size[_y_] = N[_y_];
 
     // Call the function
-    int ret = memory_allocate(neighbours, buffers, planes, borders_ptr);
+    int ret = memory_allocate(neighbours, buffers, borders_ptr, planes);
 
     // Test allocations
     assert(ret == 0);

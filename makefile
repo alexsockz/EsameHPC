@@ -8,7 +8,8 @@ PARALLEL_FUNC_DIR = parallel_func
 
 CC              = gcc
 MPICC           = mpicc
-CFLAGS          = -Wall -Wextra -O2 -I$(LIB_DIR)
+CFLAGS_COM      = -Wall -Wextra -O2 -I$(LIB_DIR)
+CFLAGS_OMP      = -fopenmp
 
 SERIAL_SRC      = $(SRC_DIR)/stencil_template_serial.c
 PARALLEL_SRC    = $(SRC_DIR)/stencil_template_parallel.c
@@ -42,12 +43,12 @@ $(SERIAL_BIN): $(SERIAL_SRC)
 # Compile parallel_func object files into bin/
 $(BIN_DIR)/%.o: $(PARALLEL_FUNC_DIR)/%.c
 	mkdir -p $(BIN_DIR)
-	$(MPICC) $(CFLAGS) -c $< -o $@
+	$(MPICC) $(CFLAGS_COM) $(CFLAGS_OMP) -c $< -o $@
 
 # Build parallel executable (update dependency)
 $(PARALLEL_BIN): $(PARALLEL_SRC) $(PARALLEL_FUNC_OBJ)
 	mkdir -p $(BIN_DIR)
-	$(MPICC) $(CFLAGS) $^ -o $@
+	$(MPICC) $(CFLAGS_COM) $(CFLAGS_OMP) $^ -o $@
 
 # Convenience targets
 serial: $(SERIAL_BIN)

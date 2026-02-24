@@ -10,7 +10,7 @@
 #include <getopt.h>
 #include <time.h>
 #include <math.h>
-
+#include <stdbool.h>
 #include <omp.h>
 #include <mpi.h>
 
@@ -78,6 +78,7 @@ int initialize(MPI_Comm *,
                char **,
                vec2_t *,
                vec2_t *,
+               int *,
                int *,
                int *,
                int *,

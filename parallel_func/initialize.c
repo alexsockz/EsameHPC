@@ -9,6 +9,7 @@ int initialize(MPI_Comm *Comm,
                vec2_t *N,     // two-uint array defining the MPI tasks' grid
                int *periodic, // periodic-boundary tag
                int *output_energy_stat,
+               int *verbose,
                int *neighbours,  // four-int array that gives back the neighbours of the calling task
                int *Niterations, // how many iterations
                int *Nsources,    // how many heat sources
@@ -21,7 +22,6 @@ int initialize(MPI_Comm *Comm,
 {
   int halt = 0;
   int ret;
-  int verbose = 0;
   
   optind = 1; //reset index to say "look at the first option"
 
@@ -31,6 +31,7 @@ int initialize(MPI_Comm *Comm,
   (*S)[_x_] = 10000;
   (*S)[_y_] = 10000;
   *periodic = 0;
+  *verbose = 0;
   *Nsources = 4;
   *Nsources_local = 0;
   *Sources_local = NULL;
@@ -109,7 +110,7 @@ int initialize(MPI_Comm *Comm,
         break;
 
       case 'v':
-        verbose = atoi(optarg);
+        *verbose = atoi(optarg);
         break;
 
       case ':':
@@ -201,8 +202,8 @@ int initialize(MPI_Comm *Comm,
   {
     if (*periodic)
     {
-      neighbours[EAST] = Y * Grid[_x_] + (Me + 1) % Grid[_x_];
-      neighbours[WEST] = (X % Grid[_x_] > 0 ? Me - 1 : (Y + 1) * Grid[_x_] - 1);
+      neighbours[EAST] = Y * Grid[_x_] + ((uint)Me + 1) % Grid[_x_];
+      neighbours[WEST] = (X % Grid[_x_] > 0 ? (uint)Me - 1 : (Y + 1) * Grid[_x_] - 1);
     }
 
     else
@@ -237,7 +238,6 @@ int initialize(MPI_Comm *Comm,
    *         that is (sx+2) x (sy+2)
    *         the outern frame will be used for halo communication or
    */
-
   vec2_t mysize;
   uint s = (*S)[_x_] / Grid[_x_];
   uint r = (*S)[_x_] % Grid[_x_];
@@ -251,7 +251,7 @@ int initialize(MPI_Comm *Comm,
   planes[NEW].size[0] = mysize[0];
   planes[NEW].size[1] = mysize[1];
 
-  if (verbose > 0)
+  if (*verbose > 0)
   {
     if (Me == 0)
     {
@@ -266,22 +266,31 @@ int initialize(MPI_Comm *Comm,
     {
       if (t == Me)
       {
-        printf("Task %4d :: "
-               "\tgrid coordinates : %3d, %3d\n"
-               "\tneighbours: N %4d    E %4d    S %4d    W %4d\n",
-               Me, X, Y,
-               neighbours[NORTH], neighbours[EAST],
-               neighbours[SOUTH], neighbours[WEST]);
+         printf("Task %4d :: "
+           "\tgrid coordinates : %3d, %3d\n"
+           "\tneighbours: N %4d    E %4d    S %4d    W %4d\n",
+           Me, X, Y,
+           (int)neighbours[NORTH], (int)neighbours[EAST],
+           (int)neighbours[SOUTH], (int)neighbours[WEST]);
         fflush(stdout);
-      }
 
+        /* removed stray number print to avoid interleaved, buffered output */
+      }
+      
+      
       MPI_Barrier(*Comm);
+      
     }
+    
   }
 
   // ··································································
   // allocae the needed memory
   //
+  if (*verbose) {
+      printf("TASK %d: preallocation\n", Me);
+    fflush(stdout);
+  }
   ret = memory_allocate(neighbours, buffers, borders_ptr, planes);
   if (ret==1)
     return 1;
@@ -292,6 +301,10 @@ int initialize(MPI_Comm *Comm,
   ret = initialize_sources(Me, Ntasks, Comm, mysize, *Nsources, Nsources_local, Sources_local);
   if (ret==1)
     return 1;
-  
+    
+  if (*verbose) {
+    printf("TASK %d: finished allocation\n", Me);
+    fflush(stdout);
+  }
   return 0;
 }

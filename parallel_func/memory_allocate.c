@@ -44,7 +44,8 @@ int memory_allocate(const int *neighbours,
     --->> Of course you can change this layout as you prefer
 
    */
-
+  // printf("memory_allocate: start\n");
+  // fflush(stdout);
   if (planes_ptr == NULL)
     // an invalid pointer has been passed
     // manage the situation
@@ -63,6 +64,9 @@ int memory_allocate(const int *neighbours,
   int y_size= planes_ptr[OLD].size[_y_];
   unsigned int frame_size = (x_size) * (y_size+2);
 
+  // printf("allocating plane data (frame_size=%u)\n", frame_size);
+  // fflush(stdout);
+
   planes_ptr[OLD].data = (double *)malloc(frame_size * sizeof(double));
   if (planes_ptr[OLD].data == NULL)
     return 1;
@@ -74,7 +78,7 @@ int memory_allocate(const int *neighbours,
     return 1;
   else
     memset(planes_ptr[NEW].data, 0, frame_size * sizeof(double));
-
+  
   // ··················································
   // buffers for north and south communication
   // are not really needed
@@ -101,11 +105,19 @@ int memory_allocate(const int *neighbours,
   buffers_ptr[NEW][NORTH] = &(planes_ptr[NEW].data[0]);
   buffers_ptr[NEW][SOUTH] = &(planes_ptr[NEW].data[(y_size + 1) * x_size]);
   //allocating 2 buffers for east and west 
-  buffers_ptr[OLD][WEST]=(double *)malloc(y_size*sizeof(double));
-  buffers_ptr[OLD][EAST]=(double *)malloc(y_size*sizeof(double));
-  buffers_ptr[NEW][WEST]=(double *)malloc(y_size*sizeof(double));
-  buffers_ptr[NEW][EAST]=(double *)malloc(y_size*sizeof(double));
-  
+  buffers_ptr[OLD][WEST] = (double *)malloc(y_size * sizeof(double));
+  if (buffers_ptr[OLD][WEST] != NULL)
+    memset(buffers_ptr[OLD][WEST], 0, y_size * sizeof(double));
+  buffers_ptr[OLD][EAST] = (double *)malloc(y_size * sizeof(double));
+  if (buffers_ptr[OLD][EAST] != NULL)
+    memset(buffers_ptr[OLD][EAST], 0, y_size * sizeof(double));
+  buffers_ptr[NEW][WEST] = (double *)malloc(y_size * sizeof(double));
+  if (buffers_ptr[NEW][WEST] != NULL)
+    memset(buffers_ptr[NEW][WEST], 0, y_size * sizeof(double));
+  buffers_ptr[NEW][EAST] = (double *)malloc(y_size * sizeof(double));
+  if (buffers_ptr[NEW][EAST] != NULL)
+    memset(buffers_ptr[NEW][EAST], 0, y_size * sizeof(double));
+
   // ··················································
   // pointers to borders to make modification of just them easier
   //
@@ -116,11 +128,12 @@ int memory_allocate(const int *neighbours,
     //by summing 1 to a pointer i actually want it to shift by _x_
     //so for now i just point to such a place in the matrix
     //in the future i will have 2 matrices, one row major and one column major
-      borders_ptr[t][NORTH] = &(planes_ptr[t].data[x_size]);
-      borders_ptr[t][SOUTH] = &(planes_ptr[t].data[y_size * x_size]);
-      borders_ptr[t][WEST] = &planes_ptr[t].data[x_size]; //will need to be changed 
-      borders_ptr[t][EAST] = &planes_ptr[t].data[(2*x_size)-1];
+        borders_ptr[t][NORTH] = &(planes_ptr[t].data[x_size]);
+        borders_ptr[t][SOUTH] = &(planes_ptr[t].data[y_size * x_size]);
+        borders_ptr[t][WEST] = &planes_ptr[t].data[x_size];
+        borders_ptr[t][EAST] = &planes_ptr[t].data[(2 * x_size) - 1];
   }
-
+      // printf("memory_allocate: done\n");
+      // fflush(stdout);
   return 0;
 }
