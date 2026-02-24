@@ -190,7 +190,7 @@ int main(int argc, char **argv)
 
           if (verbose)
           {
-            printf("TASK%d: thread %d: calculating border\n", Rank, myid);
+            printf("TASK%d: thread %d: calculating border %d\n", Rank, myid, work_direction);
             fflush(stdout);
           }
           int x_or_y = work_direction >> 1; // 0 if 0 or 1 and 1 if 2 or 3
@@ -223,13 +223,13 @@ int main(int argc, char **argv)
             }
             if (verbose)
             {
-              printf("TASK%d: thread %d: calculated border\n", Rank, myid);
+              printf("TASK%d: thread %d: calculated border %d\n", Rank, myid, work_direction);
               fflush(stdout);
             }
-            MPI_Isend(momentary_buffer, N[x_or_y], MPI_DOUBLE, neighbours[work_direction], BORDER_MESSAGE_TAG, myCOMM_WORLD, &reqs[work_direction + (4 * current)]);
+            MPI_Isend(momentary_buffer, N[x_or_y], MPI_DOUBLE, neighbours[work_direction], BORDER_MESSAGE_TAG, myCOMM_WORLD, &reqs[work_direction]);
             if (verbose)
             {
-              printf("TASK%d: thread %d: sent border\n", Rank, myid);
+              printf("TASK%d: thread %d: sent border %d\n", Rank, myid, work_direction);
               fflush(stdout);
             }
           }
