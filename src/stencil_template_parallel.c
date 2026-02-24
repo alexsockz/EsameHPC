@@ -176,6 +176,7 @@ int main(int argc, char **argv)
 
       if (myid > 4 && myid < 9)
       {
+        int work_direction=myid-5;
         /* busy-wait */
         int val = 0;
         while (1)
@@ -192,10 +193,10 @@ int main(int argc, char **argv)
             printf("TASK%d: thread %d: calculating border\n", Rank, myid);
             fflush(stdout);
           }
-          int x_or_y = myid >> 1; // 0 if 0 or 1 and 1 if 2 or 3
-          double const *old_border = border_ptr[current][myid];
-          double const *old_buffer = buffers[current][myid];
-          double *new_border = border_ptr[!current][myid];
+          int x_or_y = work_direction >> 1; // 0 if 0 or 1 and 1 if 2 or 3
+          double const *old_border = border_ptr[current][work_direction];
+          double const *old_buffer = buffers[current][work_direction];
+          double *new_border = border_ptr[!current][work_direction];
           int next_row = N[_x_];
           if (x_or_y)
           {
@@ -225,7 +226,7 @@ int main(int argc, char **argv)
               printf("TASK%d: thread %d: calculated border\n", Rank, myid);
               fflush(stdout);
             }
-            MPI_Isend(momentary_buffer, N[x_or_y], MPI_DOUBLE, neighbours[myid], BORDER_MESSAGE_TAG, myCOMM_WORLD, &reqs[myid + (4 * x_or_y)]);
+            MPI_Isend(momentary_buffer, N[x_or_y], MPI_DOUBLE, neighbours[work_direction], BORDER_MESSAGE_TAG, myCOMM_WORLD, &reqs[work_direction + (4 * current)]);
             if (verbose)
             {
               printf("TASK%d: thread %d: sent border\n", Rank, myid);
