@@ -38,7 +38,7 @@ all: serial parallel
 # Build serial executable
 $(SERIAL_BIN): $(SERIAL_SRC)
 	mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS_COM) $< -o $@
 
 # Compile parallel_func object files into bin/
 $(BIN_DIR)/%.o: $(PARALLEL_FUNC_DIR)/%.c

@@ -59,7 +59,7 @@ int main(int argc, char **argv)
                        neighbours, &Niterations,
                        &Nsources, &Nsources_local, &Sources_local, &energy_per_source,
                        &planes[0], &buffers[0], border_ptr);
-
+  printf("%d\n", Niterations);
   if (ret)
   {
     printf("task %d is opting out with termination code %d\n",
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
       // TODO parallelize injection, but maybe not so worth it
       // do it only IF Nsources >>> nthread
 
-#pragma omp masked filter(4)
+#pragma omp masked filter(8)
       {
         if (verbose)
         {
@@ -150,10 +150,11 @@ int main(int argc, char **argv)
         }
 
         ret = inject_energy(periodic, Nsources_local, Sources_local, energy_per_source, &planes[current], N);
-        if (ret==0){
-        #pragma omp atomic write
-          injected=true;
-        #pragma omp flush(injected)
+        if (ret == 0)
+        {
+#pragma omp atomic write
+          injected = true;
+#pragma omp flush(injected)
         }
         if (verbose)
         {
@@ -174,109 +175,105 @@ int main(int argc, char **argv)
         }
       }
 
-      if (myid > 4 && myid < 9)
+      if (myid > 3 && myid < 8)
       {
-        int work_direction=myid-5;
         /* busy-wait */
         int val = 0;
         while (1)
         {
-          #pragma omp atomic read
-            val = injected;
-          #pragma omp flush(injected)
+#pragma omp atomic read
+          val = injected;
+#pragma omp flush(injected)
           if (val)
             break;
         }
+        int work_direction = myid - 4;
+        if (verbose)
+        {
+          printf("TASK%d: thread %d: calculating border %d\n", Rank, myid, work_direction);
+          fflush(stdout);
+        }
+        int x_or_y = work_direction >> 1; // 0 if 0 or 1 and 1 if 2 or 3
+        double const *old_border = border_ptr[current][work_direction];
+        double const *old_buffer = buffers[current][work_direction];
+        double *new_border = border_ptr[!current][work_direction];
+        int next_row = N[_x_];
+        if (x_or_y)
+        {
+          int skips = 0;
+          int plus_or_minus_one = -1;
+          // TODO either do this or switch to a personalized MPI_TYPE
+          double *momentary_buffer = (double *)malloc(N[_y_] * sizeof(double));
+
+          if (work_direction == WEST)
+            plus_or_minus_one = 1;
+          for (uint i = 0; i < N[x_or_y]; i++)
+          {
+            double result = old_border[skips] * alpha;
+            // perpendicular to direction
+            double sum_i = (old_buffer[i] + old_border[skips + plus_or_minus_one]) * alpha_inverse;
+            // parallel
+            // might be illegal
+            double sum_j = (old_border[skips - next_row] + old_border[skips + next_row]) * alpha_inverse;
+            result += (sum_i + sum_j);
+            new_border[skips] = result;
+            momentary_buffer[i] = result;
+
+            skips += next_row;
+          }
+          if (verbose)
+          {
+            printf("TASK%d: thread %d: calculated border %d\n", Rank, myid, work_direction);
+            fflush(stdout);
+          }
+          MPI_Isend(momentary_buffer, N[x_or_y], MPI_DOUBLE, neighbours[work_direction], BORDER_MESSAGE_TAG, myCOMM_WORLD, &reqs[work_direction]);
+          if (verbose)
+          {
+            printf("TASK%d: thread %d: sent border %d\n", Rank, myid, work_direction);
+            fflush(stdout);
+          }
+        }
+        else
+        {
+          for (uint i = 1; i < N[x_or_y] - 1; i++)
+          {
+            double result = old_border[i] * alpha;
+            // parallel to dircetion
+            double sum_i = (old_border[i - 1] + old_border[i + 1]) * alpha_inverse;
+            // perpendicular
+            double sum_j = (old_buffer[i] + old_border[i + next_row]) * alpha_inverse;
+            result += (sum_i + sum_j);
+            new_border[i] = result;
+          }
+          if (verbose)
+          {
+            printf("TASK%d: thread %d: calculated border\n", Rank, myid);
+            fflush(stdout);
+          }
+
+          MPI_Isend(new_border, N[x_or_y], MPI_DOUBLE, neighbours[work_direction], BORDER_MESSAGE_TAG, myCOMM_WORLD, &reqs[work_direction]);
 
           if (verbose)
           {
-            printf("TASK%d: thread %d: calculating border %d\n", Rank, myid, work_direction);
+            printf("TASK%d: thread %d: sent border\n", Rank, myid);
             fflush(stdout);
-          }
-          int x_or_y = work_direction >> 1; // 0 if 0 or 1 and 1 if 2 or 3
-          double const *old_border = border_ptr[current][work_direction];
-          double const *old_buffer = buffers[current][work_direction];
-          double *new_border = border_ptr[!current][work_direction];
-          int next_row = N[_x_];
-          if (x_or_y)
-          {
-            int skips = 0;
-            int plus_or_minus_one = -1;
-            // TODO either do this or switch to a personalized MPI_TYPE
-            double *momentary_buffer = (double *)malloc(N[_y_] * sizeof(double));
-
-            if (myid == WEST)
-              plus_or_minus_one = 1;
-            for (uint i = 0; i < N[x_or_y]; i++)
-            {
-              double result = old_border[skips] * alpha;
-              // perpendicular to direction
-              double sum_i = (old_buffer[i] + old_border[skips + plus_or_minus_one]) * alpha_inverse;
-              // parallel
-              // might be illegal
-              double sum_j = (old_border[skips - next_row] + old_border[skips + next_row]) * alpha_inverse;
-              result += (sum_i + sum_j);
-              new_border[skips] = result;
-              momentary_buffer[i] = result;
-
-              skips += next_row;
-            }
-            if (verbose)
-            {
-              printf("TASK%d: thread %d: calculated border %d\n", Rank, myid, work_direction);
-              fflush(stdout);
-            }
-            MPI_Isend(momentary_buffer, N[x_or_y], MPI_DOUBLE, neighbours[work_direction], BORDER_MESSAGE_TAG, myCOMM_WORLD, &reqs[work_direction]);
-            if (verbose)
-            {
-              printf("TASK%d: thread %d: sent border %d\n", Rank, myid, work_direction);
-              fflush(stdout);
-            }
-          }
-          else
-          {
-            for (uint i = 1; i < N[x_or_y] - 1; i++)
-            {
-              double result = old_border[i] * alpha;
-              // parallel to dircetion
-              double sum_i = (old_border[i - 1] + old_border[i + 1]) * alpha_inverse;
-              // perpendicular
-              double sum_j = (old_buffer[i] + old_border[i + next_row]) * alpha_inverse;
-              result += (sum_i + sum_j);
-              new_border[i] = result;
-            }
-            if (verbose)
-            {
-              printf("TASK%d: thread %d: calculated border\n", Rank, myid);
-              fflush(stdout);
-            }
-
-            MPI_Isend(new_border, N[x_or_y], MPI_DOUBLE, neighbours[myid], BORDER_MESSAGE_TAG, myCOMM_WORLD, &reqs[myid + (4 * x_or_y)]);
-
-            if (verbose)
-            {
-              printf("TASK%d: thread %d: sent border\n", Rank, myid);
-              fflush(stdout);
-            }
           }
         }
       }
-
-      printf("----------------------------------------------------------------------------");
-      /* output if needed */
-      if (output_energy_stat_perstep)
-        output_energy_stat(iter, &planes[!current], (iter + 1) * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
-
-      /* swap plane indexes for the new iteration */
-      current = !current;
     }
+    /* output if needed */
+    if (output_energy_stat_perstep)
+      output_energy_stat(iter, &planes[!current], (iter + 1) * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
 
-    t1 = MPI_Wtime() - t1;
-
-    output_energy_stat(-1, &planes[!current], Niterations * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
-
-    memory_release(planes, buffers, border_ptr);
-    printf("time spent: %f \n", t1);
-    MPI_Finalize();
-    return 0;
+    /* swap plane indexes for the new iteration */
+    current = !current;
   }
+
+  t1 = MPI_Wtime() - t1;
+  output_energy_stat(-1, &planes[!current], Niterations * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
+
+  memory_release(planes, buffers, border_ptr);
+
+  MPI_Finalize();
+  return 0;
+}
