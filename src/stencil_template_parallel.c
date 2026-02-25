@@ -32,7 +32,7 @@ int main(int argc, char **argv)
   buffers_t buffers[2]; // old new, each has 4
   buffers_t border_ptr[2];
   int output_energy_stat_perstep;
-  register double alpha = 0.6;
+  register double alpha = ALPHA;
   register double alpha_inverse = 1 / 4.0 * (1 - alpha);
   /* initialize MPI envrionment */
   {

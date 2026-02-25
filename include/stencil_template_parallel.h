@@ -31,6 +31,8 @@
 #define GENERAL_USE_TAG 0
 #define BORDER_MESSAGE_TAG 1
 
+#define ALPHA 0.6
+
 typedef unsigned int uint;
 
 typedef uint vec2_t[2];

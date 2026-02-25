@@ -24,8 +24,8 @@ inline int update_plane(const int periodic,
 
     double *restrict old = oldplane->data;
     double *restrict new = newplane->data;
-    double alpha = 0.6;
-    double alpha_inverse=1/ 4.0 * (1 - alpha);
+    double const alpha = ALPHA;
+    double const alpha_inverse=1/ 4.0 * (1 - alpha);
 
     for (uint j = 2; j <= ysize-1; j++)//exclude borders and halo
         for (uint i = 1; i <= xsize; i++)//exclude borders
