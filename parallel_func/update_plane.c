@@ -27,8 +27,8 @@ inline int update_plane(const int periodic,
     double const alpha = ALPHA;
     double const alpha_inverse=1/ 4.0 * (1 - alpha);
 
-    for (uint j = 2; j <= ysize-1; j++)//exclude borders and halo
-        for (uint i = 1; i <= xsize; i++)//exclude borders
+    for (uint j = 2; j < ysize-1; j++)//exclude borders and halo
+        for (uint i = 1; i < xsize; i++)//exclude borders
         {
 
             // NOTE: (i-1,j), (i+1,j), (i,j-1) and (i,j+1) always exist even

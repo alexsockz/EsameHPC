@@ -59,6 +59,7 @@ int output_energy_stat(int,
                        int,
                        MPI_Comm *);
 
+void print_matrix(int, int, double*);
 
 /* ==========================================================================
    =                                                                        =

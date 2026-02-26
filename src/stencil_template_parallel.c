@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     return 0;
   }
   decomposedS[_x_]=planes[OLD].size[_x_];
-  decomposedS[_y_]=planes[OLD].size[_x_];
+  decomposedS[_y_]=planes[OLD].size[_y_];
   int current = OLD;
   double t1 = MPI_Wtime(); /* take wall-clock time */
 
@@ -88,6 +88,8 @@ int main(int argc, char **argv)
       fflush(stdout);
     }
     MPI_Request reqs[8];
+
+    fflush(stdout);
 
     /* new energy from sources */
 
@@ -122,26 +124,23 @@ int main(int argc, char **argv)
         // incoming from, so if the buffer sent is south it needs to be put in in north
         MPI_Status status;
         int x_or_y = myid >> 1;                     // 0 if 0 or 1 and 1 if 2 or 3
-        int source = (myid & 2) | (1 - (myid & 1)); // inverts 0 to 1 or 2 to 3 and vice versa
         // check the various pointers of this line
         // current or not current? not sure, i think not current aka next
         //  maybe change tag to current iteration number
         if (verbose)
         {
-          printf("TASK%d: thread %d: waiting for Mpi_recv from %d, source %d \n", Rank, myid, neighbours[source], source);
+          printf("TASK%d: thread %d: waiting for Mpi_recv from %d, source %d \n", Rank, myid, neighbours[myid],myid);
           fflush(stdout);
         }
 
-        MPI_Recv(buffers[!current][myid], decomposedS[x_or_y], MPI_DOUBLE, neighbours[source], iter, myCOMM_WORLD, &status);
+        MPI_Recv(buffers[!current][myid], decomposedS[x_or_y], MPI_DOUBLE, neighbours[myid], iter, myCOMM_WORLD, &status);
         if (verbose)
         {
-          printf("TASK%d: thread %d: recieved from %d\n", Rank, myid, neighbours[source]);
-          // printf("[");
-          // for (int i=0; i<decomposedS[x_or_y];i++)
-          // {
-          //   printf("%f, ",buffers[!current][myid][i]);
-          // }
-          // printf("]\n");
+          printf("TASK%d: thread %d: recieved from %d\n", Rank, myid, neighbours[myid]);
+          printf("sum of the border [");
+          if(neighbours[myid]!=-2){
+            print_matrix(decomposedS[x_or_y], 1, buffers[!current][myid]);
+          }
           fflush(stdout);
         }
       }
@@ -174,10 +173,11 @@ int main(int argc, char **argv)
           printf("TASK%d: thread %d: updating plane\n", Rank, myid);
           fflush(stdout);
         }
-        update_plane(periodic, N, &planes[OLD], &planes[NEW]);
+        update_plane(periodic, N, &planes[current], &planes[!current]);
         if (verbose)
         {
           printf("TASK%d: thread %d: updated plane\n", Rank, myid);
+          print_matrix(planes[!current].size[_x_], planes[!current].size[_y_],planes[!current].data);
           fflush(stdout);
         }
       }
@@ -195,6 +195,7 @@ int main(int argc, char **argv)
             break;
         }
         int work_direction = myid - 4;
+        int dest = (myid & 2) | (1 - (myid & 1)); // inverts 0 to 1 or 2 to 3 and vice versa
         if (verbose)
         {
           printf("TASK%d: thread %d: calculating border %d\n", Rank, myid, work_direction);
@@ -232,11 +233,14 @@ int main(int argc, char **argv)
           {
             printf("TASK%d: thread %d: calculated border %d\n", Rank, myid, work_direction);
             fflush(stdout);
+            print_matrix(decomposedS[x_or_y],1,momentary_buffer);
+            fflush(stdout);
           }
-          MPI_Isend(momentary_buffer, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], BORDER_MESSAGE_TAG, myCOMM_WORLD, &reqs[work_direction]);
+          
+          MPI_Isend(momentary_buffer, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD, &reqs[work_direction]);
           if (verbose)
           {
-            printf("TASK%d: thread %d: sent border %d\n", Rank, myid, work_direction);
+            printf("TASK%d: thread %d: sent border to %d, direction %d\n", Rank, myid, neighbours[work_direction], work_direction);
             fflush(stdout);
           }
         }
@@ -256,13 +260,14 @@ int main(int argc, char **argv)
           {
             printf("TASK%d: thread %d: calculated border\n", Rank, myid);
             fflush(stdout);
+            print_matrix(decomposedS[x_or_y],1,new_border);
+            fflush(stdout);
           }
-
-          MPI_Isend(new_border, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], BORDER_MESSAGE_TAG, myCOMM_WORLD, &reqs[work_direction]);
+          MPI_Isend(new_border, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD, &reqs[work_direction]);
 
           if (verbose)
           {
-            printf("TASK%d: thread %d: sent border\n", Rank, myid);
+            printf("TASK%d: thread %d: sent border to %d, direction %d\n", Rank, myid, neighbours[work_direction], work_direction);
             fflush(stdout);
           }
         }
@@ -278,7 +283,7 @@ int main(int argc, char **argv)
 
   t1 = MPI_Wtime() - t1;
   output_energy_stat(-1, &planes[!current], Niterations * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
-
+  printf("time taken %f\n", t1);
   memory_release(planes, buffers, border_ptr);
 
   MPI_Finalize();
