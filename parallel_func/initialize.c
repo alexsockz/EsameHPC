@@ -1,23 +1,7 @@
 #include "stencil_template_parallel.h"
 
-int initialize(MPI_Comm *Comm,
-               int Me,        // the rank of the calling process
-               int Ntasks,    // the total number of MPI ranks
-               int argc,      // the argc from command line
-               char **argv,   // the argv from command line
-               vec2_t *S,     // the size of the plane
-               vec2_t *N,     // two-uint array defining the MPI tasks' grid
-               int *periodic, // periodic-boundary tag
-               int *output_energy_stat,
-               int *verbose,
-               int *Niterations, // how many iterations
-               int *Nsources,    // how many heat sources
-               int *Nsources_local,
-               vec2_t **Sources_local,
-               double *energy_per_source, // how much heat per source
-               plane_t *planes,
-               buffers_t *buffers,
-               buffers_t *borders_ptr)
+//process_argv(Me, argc, argv, S, periodic, output_energy_stat, verbose, Niterations, Nsources, energy_per_source);
+int process_argv(int Me, int argc, char ** argv, vec2_t* S,int *periodic, int *output_energy_stat, int* verbose, int * Niterations, int* Nsources, int * energy_per_source)
 {
   int halt = 0;
   int ret;
@@ -31,25 +15,9 @@ int initialize(MPI_Comm *Comm,
   (*S)[_y_] = 10000;
   *periodic = 0;
   *Nsources = 4;
-  *Nsources_local = 0;
-  *Sources_local = NULL;
   *Niterations = 1000;
   *energy_per_source = 1.0;
 
-  if (planes == NULL)
-  {
-    // manage the situation
-  }
-
-  planes[OLD].size[0] = 0;
-  planes[NEW].size[0] = 0;
-
-  for (int b = 0; b < 2; b++)
-    for (int d = 0; d < 4; d++)
-    {
-      buffers[b][d] = NULL;
-      borders_ptr[b][d] = NULL;
-    }
   // ··································································
   // process the commadn line
   //

@@ -28,7 +28,6 @@ int main(int argc, char **argv)
   buffers_t buffers[2]; // old new, each has 4
   buffers_t border_ptr[2];
   int output_energy_stat_perstep;
-  int matrix;
   register double alpha = ALPHA;
   register double alpha_inverse = 1 / 4.0 * (1 - alpha);
   /* initialize MPI envrionment */
@@ -52,7 +51,7 @@ int main(int argc, char **argv)
   }
 
   /* argument checking and setting */
-  int ret = initialize(&myCOMM_WORLD, Rank, Ntasks, argc, argv, &S, &N, &periodic, &output_energy_stat_perstep, &verbose, &matrix,
+  int ret = initialize(&myCOMM_WORLD, Rank, Ntasks, argc, argv, &S, &N, &periodic, &output_energy_stat_perstep, &verbose,
                        neighbours, &Niterations,
                        &Nsources, &Nsources_local, &Sources_local, &energy_per_source,
                        &planes[0], &buffers[0], border_ptr);
@@ -187,7 +186,6 @@ int main(int argc, char **argv)
             break;
         }
         int work_direction = myid - 4;
-        int dest = (myid & 2) | (1 - (myid & 1)); // inverts 0 to 1 or 2 to 3 and vice versa
         if (verbose)
         {
           printf("TASK%d: thread %d: calculating border %d\n", Rank, myid, work_direction);
