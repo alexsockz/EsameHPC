@@ -1,5 +1,5 @@
-// #define DEBUG
-// #define MATRIX
+#define DEBUG
+//#define MATRIX
 #include "stencil_template_parallel.h"
 
 // ------------------------------------------------------------------
@@ -172,18 +172,24 @@ int main(int argc, char **argv)
           val = injected;
 #pragma omp flush(injected)
         }
-        ret = update_border(myid,iter,border_ptr[current],buffers[current],buffers[!current],decomposedS,neighbours,myCOMM_WORLD,reqs);
-        if (ret==1)
-          return 1;
+                update_border(
+                        myid,
+                        iter,
+                        border_ptr[current][myid - 4],
+                        buffers[current][myid - 4],
+                        border_ptr[!current][myid - 4],
+                        decomposedS,
+                        neighbours,
+                        myCOMM_WORLD,
+                        reqs);
       }
     }
     /* output if needed */
     if (output_energy_stat_perstep)
     {
-      output_energy_stat(iter, &planes[!current], (iter + 1) * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
+        output_energy_stat(iter, &planes[!current], (iter + 1) * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
 #ifdef MATRIX
-      print_matrix(Rank, Ntasks, planes[!current].size[_x_], planes[!current].size[_y_], planes[!current].data,
-                   buffers[!current], myCOMM_WORLD);
+        print_matrix(Rank, Ntasks, planes[!current].size[_x_], planes[!current].size[_y_], planes[!current].data, buffers[!current], myCOMM_WORLD);
 #endif
     }
     /* swap plane indexes for the new iteration */

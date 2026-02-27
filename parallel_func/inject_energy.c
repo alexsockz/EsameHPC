@@ -1,6 +1,6 @@
 #include "stencil_template_parallel.h"
 
-inline int inject_energy(const int periodic,
+int inject_energy(const int periodic,
                          const int Nsources,
                          const vec2_t *Sources,
                          const double energy,

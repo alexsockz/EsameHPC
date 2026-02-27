@@ -50,13 +50,13 @@ typedef struct
    =   Output                                                               =
    ========================================================================== */
 
-inline int get_total_energy(const plane_t * plane,
+int get_total_energy(const plane_t * plane,
                             double *energy);
 
 int output_energy_stat(int step, plane_t const *plane, double budget, int Me, MPI_Comm *Comm);
 
-inline void print_matrix(int rank, int Ntask, int x_size, int y_size, const double* matrix_ptr,
-                                    const double**, MPI_Comm *Comm);
+void print_matrix(int rank, int Ntask, int x_size, int y_size, const double* matrix_ptr,
+                                    const double *restrict buffer[], MPI_Comm Comm);
 
 int dump(const double *data, const uint size[2], const char *filename, double *min, double *max);
 
@@ -98,20 +98,20 @@ int initialize(MPI_Comm *Comm,
    =   Update                                                               =
    ========================================================================== */
 
-inline int inject_energy(const int periodic,
-                         const int Nsources,
-                         const vec2_t *Sources,
-                         const double energy,
-                         plane_t *plane,
-                         const vec2_t N);
+int inject_energy(const int ,
+                         const int ,
+                         const vec2_t *,
+                         const double ,
+                         plane_t *,
+                         const vec2_t );
 
-inline int update_plane(const int periodic,
+int update_plane(const int periodic,
                         const vec2_t N, // the grid of MPI tasks
                         const plane_t *oldplane,
                         plane_t *newplane);
 
 int update_border(int myid, int iter, double const *old_border,double const *old_buffer, 
-                    double *new_border, const vec2_t S, const int* neighbours,MPI_Comm *Comm, MPI_Request* reqs);
+                    double *new_border, const vec2_t S, const int* neighbours,MPI_Comm Comm, MPI_Request* reqs);
 
 /* ==========================================================================
    =                                                                        =

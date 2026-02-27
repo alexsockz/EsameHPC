@@ -1,6 +1,6 @@
 #include "stencil_template_parallel.h"
 
-inline void print_matrix( int x_size, int y_size, const double* matrix_ptr,
+inline void print_matrix_basic( int x_size, int y_size, const double* matrix_ptr,
                                     const double* west_buf, const double* east_buf)
 {
     if (matrix_ptr == NULL || x_size <= 0 || y_size <= 0)
@@ -50,14 +50,14 @@ inline void print_matrix( int x_size, int y_size, const double* matrix_ptr,
 
 
 inline void print_matrix(int rank, int Ntasks, int x_size, int y_size, const double* matrix_ptr,
-                                    const double** buffer, MPI_Comm *Comm){
-         for(int x=0; x<Ntasks; x++){
-        MPI_Barrier(Comm);
-        if(x == rank){
-          printf("process %d matrix:\n", rank);
-          print_matrix(x_size, y_size, matrix_ptr, buffer[WEST], buffer[EAST]);
-          printf("------------------------------------------------------------------\n");
-          fflush(stdout);
+                                                                        const double *restrict buffer[], MPI_Comm Comm){
+        for (int x = 0; x < Ntasks; x++) {
+                MPI_Barrier(Comm);
+                if (x == rank) {
+                        printf("process %d matrix:\n", rank);
+                        print_matrix_basic(x_size, y_size, matrix_ptr, buffer[WEST], buffer[EAST]);
+                        printf("------------------------------------------------------------------\n");
+                        fflush(stdout);
+                }
         }
-      } 
 }

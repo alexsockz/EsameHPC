@@ -5,7 +5,7 @@
 // è tutto generalizzabile ad un solo ciclo se trasformo il for in while
 
 int update_border(int myid, int iter, double const *old_border,double const *old_buffer, 
-                    double *new_border, const vec2_t S, const int* neighbours,MPI_Comm *Comm, MPI_Request* reqs)
+                    double *new_border, const vec2_t S, const int* neighbours,MPI_Comm Comm, MPI_Request* reqs)
 {
     double const alpha = ALPHA;
     double const alpha_inverse=1/ 4.0 * (1 - alpha);
@@ -16,9 +16,7 @@ int update_border(int myid, int iter, double const *old_border,double const *old
     fflush(stdout);
 #endif
     int x_or_y = work_direction >> 1; // 0 if 0 or 1 and 1 if 2 or 3
-    //double const *old_border = border_ptr[current][work_direction];
-    //double const *old_buffer = buffers[current][work_direction];
-    //double *new_border = border_ptr[!current][work_direction];
+    // Pointers are now passed directly from the caller, not arrays.
     int next_row = S[_x_];
     if (x_or_y)
     {
@@ -69,7 +67,7 @@ int update_border(int myid, int iter, double const *old_border,double const *old
         fflush(stdout);
 #endif
         MPI_Isend(new_border, S[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, Comm,
-                  &reqs[work_direction]);
+              &reqs[work_direction]);
 
 #ifdef DEBUG
         printf("TASK%d: thread %d: sent border to %d, direction %d\n",

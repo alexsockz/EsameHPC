@@ -7,7 +7,6 @@ int process_argv(int Me,        // the rank of the calling process
                int *periodic, // periodic-boundary tag
                int *output_energy_stat,
                int *verbose,
-               int *matrix,
                int *Niterations, // how many iterations
                int *Nsources,    // how many heat sources
                double *energy_per_source) // how much heat per source
@@ -16,8 +15,7 @@ int process_argv(int Me,        // the rank of the calling process
   while (1)
   {
     int opt;
-    /* add 'm:' so the -m <int> matrix flag is parsed */
-    while ((opt = getopt(argc, argv, ":hx:y:e:E:n:o:p:v:m:")) != -1)
+    while ((opt = getopt(argc, argv, ":hx:y:e:E:n:o:p:v:")) != -1)
     {
       switch (opt)
       {
@@ -68,9 +66,6 @@ int process_argv(int Me,        // the rank of the calling process
       case 'v':
         *verbose = atoi(optarg);
         break;
-      case 'm':
-        *matrix = atoi(optarg);
-        break;
       case ':':
         printf("option -%c requires an argument\n", optopt);
         break;
@@ -101,7 +96,6 @@ int initialize(MPI_Comm *Comm,
                int *periodic, // periodic-boundary tag
                int *output_energy_stat,
                int *verbose,
-               int *matrix,
                int *neighbours,  // four-int array that gives back the neighbours of the calling task
                int *Niterations, // how many iterations
                int *Nsources,    // how many heat sources
@@ -123,7 +117,6 @@ int initialize(MPI_Comm *Comm,
   (*S)[_y_] = 10000;
   *periodic = 0;
   *verbose = 0;
-  *matrix = 0;
   *Nsources = 4;
   *Nsources_local = 0;
   *Sources_local = NULL;
@@ -150,7 +143,7 @@ int initialize(MPI_Comm *Comm,
   // ··································································
   // process the commadn line
   //
-  process_argv(Me, argc, argv, S, periodic, output_energy_stat, verbose, matrix, Niterations, Nsources, energy_per_source);
+  process_argv(Me, argc, argv, S, periodic, output_energy_stat, verbose, Niterations, Nsources, energy_per_source);
 
   // ··································································
   /*

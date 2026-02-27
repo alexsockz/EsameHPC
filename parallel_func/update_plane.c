@@ -1,6 +1,6 @@
 #include "stencil_template_parallel.h"
 
-inline int update_plane(const int periodic,
+int update_plane(const int periodic,
                         const vec2_t N, // the grid of MPI tasks
                         const plane_t *oldplane,
                         plane_t *newplane)
