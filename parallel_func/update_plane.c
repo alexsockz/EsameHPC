@@ -5,10 +5,10 @@ int update_plane(const int periodic,
                         const plane_t *oldplane,
                         plane_t *newplane)
 {
-    uint register fxsize = oldplane->size[_x_];
+    register uint fxsize = oldplane->size[_x_];
 
-    uint register xsize = oldplane->size[_x_];
-    uint register ysize = oldplane->size[_y_];
+    register uint xsize = oldplane->size[_x_];
+    register uint ysize = oldplane->size[_y_];
 
 #define IDX(i, j) ((j) * fxsize + (i))
 
@@ -26,6 +26,7 @@ int update_plane(const int periodic,
     double const alpha = ALPHA;
     double const alpha_inverse=1/ 4.0 * (1 - alpha);
 
+    #pragma omp parallel for collapse(2) schedule(static)
     for (uint j = 2; j < ysize-1; j++)//exclude borders and halo
         for (uint i = 1; i < xsize; i++)//exclude borders
         {
