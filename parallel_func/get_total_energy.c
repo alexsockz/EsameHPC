@@ -1,6 +1,6 @@
 #include "stencil_template_parallel.h"
 
-inline int get_total_energy(const plane_t * plane,
+int get_total_energy(const plane_t * plane,
                             double *energy)
 /*
  * NOTE: this routine a good candiadate for openmp

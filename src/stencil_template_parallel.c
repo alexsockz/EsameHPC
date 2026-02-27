@@ -1,10 +1,6 @@
 
-/*
- *
- *  mysizex   :   local x-extendion of your patch
- *  mysizey   :   local y-extension of your patch
- *
- */
+#define DEBUG
+//#define MATRIX
 
 #include "stencil_template_parallel.h"
 
@@ -267,19 +263,14 @@ int main(int argc, char **argv)
       }
     }
     /* output if needed */
-    if (output_energy_stat_perstep){
-      output_energy_stat(iter, &planes[!current], (iter + 1) * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
-    if(matrix==1){
-      for(int x=0; x<Ntasks; x++){
-        MPI_Barrier(myCOMM_WORLD);
-        if(x == Rank){
-          printf("process %d matrix:\n", Rank);
-          print_matrix(planes[current].size[_x_], planes[current].size[_x_], planes[current].data, buffers[current][WEST], buffers[current][EAST]);
-          printf("------------------------------------------------------------------\n");
-          fflush(stdout);
-        }
-      }
-    }
+        /* output if needed */
+    if (output_energy_stat_perstep)
+    {
+        output_energy_stat(iter, &planes[!current], (iter + 1) * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
+#ifdef MATRIX
+        print_matrix(Rank, Ntasks, planes[!current].size[_x_], planes[!current].size[_y_], planes[!current].data, buffers[!current], myCOMM_WORLD);
+#endif
+
     }
     /* swap plane indexes for the new iteration */
     current = !current;

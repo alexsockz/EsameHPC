@@ -10,8 +10,6 @@ int initialize(MPI_Comm *Comm,
                int *periodic, // periodic-boundary tag
                int *output_energy_stat,
                int *verbose,
-               int *matrix,
-               int *neighbours,  // four-int array that gives back the neighbours of the calling task
                int *Niterations, // how many iterations
                int *Nsources,    // how many heat sources
                int *Nsources_local,
@@ -32,8 +30,6 @@ int initialize(MPI_Comm *Comm,
   (*S)[_x_] = 10000;
   (*S)[_y_] = 10000;
   *periodic = 0;
-  *verbose = 0;
-  *matrix = 0;
   *Nsources = 4;
   *Nsources_local = 0;
   *Sources_local = NULL;
@@ -48,9 +44,6 @@ int initialize(MPI_Comm *Comm,
   planes[OLD].size[0] = 0;
   planes[NEW].size[0] = 0;
 
-  for (int i = 0; i < 4; i++)
-    neighbours[i] = MPI_PROC_NULL;
-
   for (int b = 0; b < 2; b++)
     for (int d = 0; d < 4; d++)
     {
@@ -63,8 +56,7 @@ int initialize(MPI_Comm *Comm,
   while (1)
   {
     int opt;
-    /* add 'm:' so the -m <int> matrix flag is parsed */
-    while ((opt = getopt(argc, argv, ":hx:y:e:E:n:o:p:v:m:")) != -1)
+    while ((opt = getopt(argc, argv, ":hx:y:e:E:n:o:p:v:")) != -1)
     {
       switch (opt)
       {
@@ -115,9 +107,6 @@ int initialize(MPI_Comm *Comm,
       case 'v':
         *verbose = atoi(optarg);
         break;
-      case 'm':
-        *matrix = atoi(optarg);
-        break;
       case ':':
         printf("option -%c requires an argument\n", optopt);
         break;
@@ -134,6 +123,68 @@ int initialize(MPI_Comm *Comm,
 
   if (halt)
     return 1;
+  else 
+    return 0;
+}
+
+int initialize(MPI_Comm *Comm,
+               int Me,        // the rank of the calling process
+               int Ntasks,    // the total number of MPI ranks
+               int argc,      // the argc from command line
+               char **argv,   // the argv from command line
+               vec2_t *S,     // the size of the plane
+               vec2_t *N,     // two-uint array defining the MPI tasks' grid
+               int *periodic, // periodic-boundary tag
+               int *output_energy_stat,
+               int *verbose,
+               int *neighbours,  // four-int array that gives back the neighbours of the calling task
+               int *Niterations, // how many iterations
+               int *Nsources,    // how many heat sources
+               int *Nsources_local,
+               vec2_t **Sources_local,
+               double *energy_per_source, // how much heat per source
+               plane_t *planes,
+               buffers_t *buffers,
+               buffers_t *borders_ptr)
+{
+  int ret;
+
+  optind = 1; // reset index to say "look at the first option"
+
+  // ··································································
+  // set deffault values
+
+  (*S)[_x_] = 10000;
+  (*S)[_y_] = 10000;
+  *periodic = 0;
+  *verbose = 0;
+  *Nsources = 4;
+  *Nsources_local = 0;
+  *Sources_local = NULL;
+  *Niterations = 1000;
+  *energy_per_source = 1.0;
+
+  if (planes == NULL)
+  {
+    return 1;
+  }
+
+  planes[OLD].size[0] = 0;
+  planes[NEW].size[0] = 0;
+
+  for (int i = 0; i < 4; i++)
+    neighbours[i] = MPI_PROC_NULL;
+
+  for (int b = 0; b < 2; b++)
+    for (int d = 0; d < 4; d++)
+    {
+      buffers[b][d] = NULL;
+      borders_ptr[b][d] = NULL;
+    }
+  // ··································································
+  // process the commadn line
+  //
+  process_argv(Me, argc, argv, S, periodic, output_energy_stat, verbose, Niterations, Nsources, energy_per_source);
 
   // ··································································
   /*
