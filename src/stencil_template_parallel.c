@@ -1,5 +1,5 @@
 //#define VERBOSE
-#define MATRIX
+//#define MATRIX
 
 #include "stencil_template_parallel.h"
 
