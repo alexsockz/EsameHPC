@@ -111,8 +111,12 @@ int update_plane(const int periodic,
                         plane_t *newplane);
 
 
-int update_border(int myid, int iter, double const *old_border,double const *old_buffer, 
-                    double *new_border, const vec2_t S, const int* neighbours,MPI_Comm Comm, MPI_Request* reqs);
+void update_border_calc(int work_direction,
+                        const vec2_t decomposedS,
+                        double const *old_border,
+                        double const *old_buffer,
+                        double *new_border,
+                        double *momentary_buffer);
 
 /* ==========================================================================
    =                                                                        =

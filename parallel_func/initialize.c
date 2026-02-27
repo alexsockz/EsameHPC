@@ -1,7 +1,7 @@
 #include "stencil_template_parallel.h"
 
 //process_argv(Me, argc, argv, S, periodic, output_energy_stat, verbose, Niterations, Nsources, energy_per_source);
-int process_argv(int Me, int argc, char ** argv, vec2_t* S,int *periodic, int *output_energy_stat, int* verbose, int * Niterations, int* Nsources, int * energy_per_source)
+int process_argv(int Me, int argc, char ** argv, vec2_t* S,int *periodic, int *output_energy_stat, int* verbose, int * Niterations, int* Nsources, double * energy_per_source)
 {
   int halt = 0;
   int ret;

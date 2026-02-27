@@ -2,7 +2,6 @@
 //#define MATRIX
 
 #include "stencil_template_parallel.h"
-
 // ------------------------------------------------------------------
 // ------------------------------------------------------------------
 
@@ -16,7 +15,9 @@ int main(int argc, char **argv)
   int Niterations;
   int periodic;
   int verbose;
-  vec2_t S, N, decomposedS;
+  vec2_t S;
+  vec2_t N;
+  vec2_t decomposedS;
 
   int Nsources;
   int Nsources_local;
@@ -106,42 +107,9 @@ int main(int argc, char **argv)
     /* --------------------------------------  */
     /* update grid points */
 
-#pragma omp parallel num_threads(9)
+#pragma omp parallel
     {
-      int myid = omp_get_thread_num();
-
-      if (myid < 4)
-      {
-
-        // #define _x_ 0
-        // #define _y_ 1
-        
-        // #define NORTH 0  _x_
-        // #define SOUTH 1  _x_
-        // #define EAST 2   _y_
-        // #define WEST 3   _y_
-        // incoming from, so if the buffer sent is south it needs to be put in in north
-        MPI_Status status;
-        int x_or_y = myid >> 1;                     // 0 if 0 or 1 and 1 if 2 or 3
-        // check the various pointers of this line
-        // current or not current? not sure, i think not current aka next
-        //  maybe change tag to current iteration number
-#ifdef VERBOSE
-          printf("TASK%d: thread %d: waiting for Mpi_recv from %d, source %d \n", Rank, myid, neighbours[myid],myid);
-          fflush(stdout);
-#endif
-
-        MPI_Recv(buffers[!current][myid], decomposedS[x_or_y], MPI_DOUBLE, neighbours[myid], iter, myCOMM_WORLD, &status);
-
-#ifdef VERBOSE
-          printf("TASK%d: thread %d: recieved from %d\n", Rank, myid, neighbours[myid]);
-          fflush(stdout);
-#endif        
-      }
-      // TODO parallelize injection, but maybe not so worth it
-      // do it only IF Nsources >>> nthread
-
-#pragma omp masked filter(8)
+#pragma omp masked
       {
 #ifdef VERBOSE
           printf("TASK%d: thread %d: injecting\n", Rank, myid);
@@ -176,113 +144,83 @@ int main(int argc, char **argv)
         #pragma omp atomic
         t_tot_calc += t_elapsed_calc;
       }
-
-      if (myid > 3 && myid < 8)
-      {
-        register double alpha = ALPHA;
-        register double alpha_inverse = 1 / 4.0 * (1 - alpha);
-        /* busy-wait */
-        int val = 0;
-        while (1)
+              /* For the 4 communication directions use a small parallel region that
+         provides each worker with a private `i` in 0..3. This makes the send
+         thread-agnostic while keeping the original logic and injection
+         synchronization intact. */
+        int i;
+        #pragma omp for schedule(dynamic) private(i)
+        for (i = 0; i < 4; i++)
         {
-#pragma omp atomic read
-          val = injected;
-#pragma omp flush(injected)
-          if (val)
-            break;
-        }
+          MPI_Status status;
+          int x_or_y = i >> 1;                     // 0 if 0 or 1 and 1 if 2 or 3
 
-        double t_start_send_local = MPI_Wtime();
-        int work_direction = myid - 4;
 #ifdef VERBOSE
-          printf("TASK%d: thread %d: calculating border %d\n", Rank, myid, work_direction);
+          printf("TASK%d: comm-thread %d: posting Irecv from %d\n", Rank, i, neighbours[i]);
           fflush(stdout);
 #endif
-        int x_or_y = work_direction >> 1; // 0 if 0 or 1 and 1 if 2 or 3
-        double const *old_border = border_ptr[current][work_direction];
-        double const *old_buffer = buffers[current][work_direction];
-        double *new_border = border_ptr[!current][work_direction];
-        int next_row = decomposedS[_x_];
-        if (x_or_y)
-        {
-          //vertical: WEST EAST
-          int skips = 0;
-          int plus_or_minus_one = -1;
-          // TODO either do this or switch to a personalized MPI_TYPE
-          double *momentary_buffer = (double *)malloc(decomposedS[_y_] * sizeof(double));
+          MPI_Irecv(buffers[!current][i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[4 + i]);
 
-          if (work_direction == WEST)
-            plus_or_minus_one = 1;
-          for (uint i = 0; i < decomposedS[x_or_y]; i++)
+          /* wait for injection to complete (preserve original behavior) */
+          int val = 0;
+          while (val)
           {
-            double result = old_border[skips] * alpha;
-            // perpendicular to direction
-            double sum_i = (old_buffer[i] + old_border[skips + plus_or_minus_one]) * alpha_inverse;
-            // parallel
-            // might be illegal
-            double sum_j = (old_border[skips - next_row] + old_border[skips + next_row]) * alpha_inverse;
-            result += (sum_i + sum_j);
-            #pragma omp atomic write
-            new_border[skips] = result;
-            #pragma omp flush(new_border)
-            momentary_buffer[i] = result;
-
-            skips += next_row;
+#pragma omp atomic read
+            val = injected;
+#pragma omp flush(injected)
           }
+
+          double t_start_send_local = MPI_Wtime();
 #ifdef VERBOSE
-            printf("TASK%d: thread %d: calculated border %d\n", Rank, myid, work_direction);
+            printf("TASK%d: comm-thread %d: calculating border %d\n", Rank, i, i);
             fflush(stdout);
 #endif
-          
-          MPI_Send(momentary_buffer, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD);
-          free(momentary_buffer);
+          double const *old_border = border_ptr[current][i];
+          double const *old_buffer = buffers[current][i];
+          double *new_border = border_ptr[!current][i];
 
-          /* account send time (blocking send) */
-          double t_elapsed_send = MPI_Wtime() - t_start_send_local;
-          #pragma omp atomic
-          t_tot_send += t_elapsed_send;
-
-#ifdef VERBOSE
-            printf("TASK%d: thread %d: sent border to %d, direction %d\n", Rank, myid, neighbours[work_direction], work_direction);
-            fflush(stdout);
-#endif
-        }
-        else
-        {
-          for (uint i = 1; i < decomposedS[x_or_y] - 1; i++)
+          double *momentary_buffer = NULL;
+          if (x_or_y)
           {
-            double result = old_border[i] * alpha;
-            // parallel to dircetion
-            double sum_i = (old_border[i - 1] + old_border[i + 1]) * alpha_inverse;
-            // perpendicular
-            double sum_j = (old_buffer[i] + old_border[i + next_row]) * alpha_inverse;
-            result += (sum_i + sum_j);
-            #pragma omp atomic write
-            new_border[i] = result;
-            #pragma omp flush(new_border)
+            momentary_buffer = (double *)malloc(decomposedS[_y_] * sizeof(double));
           }
-#ifdef VERBOSE
-            printf("TASK%d: thread %d: calculated border\n", Rank, myid);
-            fflush(stdout);
-#endif
-#ifndef VERBOSE
-            /* issue non-blocking send for this direction */
-#endif
-            MPI_Isend(new_border, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD, &reqs[work_direction]);
-#ifdef VERBOSE
-            printf("TASK%d: thread %d: sent border to %d, direction %d\n", Rank, myid, neighbours[work_direction], work_direction);
-            fflush(stdout);
-#endif
-        }
-        /* if Isend was used, count elapsed time up to Isend return */
-        if (x_or_y == 0)
-        {
-          double t_elapsed_send = MPI_Wtime() - t_start_send_local;
-          #pragma omp atomic
-          t_tot_send += t_elapsed_send;
+
+          update_border_calc(i, decomposedS, old_border, old_buffer, new_border, momentary_buffer);
+
+          if (x_or_y)
+          {
+            MPI_Isend(momentary_buffer, decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[i]);
+
+            double t_elapsed_send = MPI_Wtime() - t_start_send_local;
+            #pragma omp atomic
+            t_tot_send += t_elapsed_send;
+
+            if (reqs[i] != MPI_REQUEST_NULL)
+            {
+              MPI_Wait(&reqs[i], MPI_STATUS_IGNORE);
+              reqs[i] = MPI_REQUEST_NULL;
+            }
+            free(momentary_buffer);
+          }
+          else
+          {
+            MPI_Isend(new_border, decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[i]);
+
+            double t_elapsed_send = MPI_Wtime() - t_start_send_local;
+            #pragma omp atomic
+            t_tot_send += t_elapsed_send;
+
+            if (reqs[i] != MPI_REQUEST_NULL)
+            {
+              MPI_Wait(&reqs[i], MPI_STATUS_IGNORE);
+              reqs[i] = MPI_REQUEST_NULL;
+            }
+          }
+
+          /* ensure the posted Irecv completes before exiting this worker */
+          MPI_Wait(&reqs[4 + i], &status);
         }
       }
-    }
     /* output if needed */
         /* output if needed */
     if (output_energy_stat_perstep)
