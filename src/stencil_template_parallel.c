@@ -39,6 +39,7 @@ int main(int argc, char **argv)
     {
       printf("MPI_thread level obtained is %d instead of %d\n",
              level_obtained, MPI_THREAD_MULTIPLE);
+      fflush(stdout);
       MPI_Finalize();
       exit(1);
     }
@@ -68,16 +69,14 @@ int main(int argc, char **argv)
   int current = OLD;
   double t1 = MPI_Wtime(); /* take wall-clock time */
   double t_tot_inj=0;
-  double t_start_inj;
   double t_tot_calc= 0;
-  double t_start_calc;
   double t_tot_send=0;
-  double t_start_send;
   // somehow fit this in a cycle
   //  important for the future
   //  int i, j, k;
   //  #pragma omp parallel private(i,k) means that i and k will be unique for each thread and not shared
-
+  
+  MPI_Request reqs[8];
   for (int iter = 0; iter < Niterations; ++iter)
   {
     bool injected = false;
@@ -87,7 +86,7 @@ int main(int argc, char **argv)
       fflush(stdout);
     #endif
     
-    MPI_Request reqs[8];
+    for (int ri = 0; ri < 8; ++ri) reqs[ri] = MPI_REQUEST_NULL;
 
     fflush(stdout);
 
@@ -149,7 +148,7 @@ int main(int argc, char **argv)
           fflush(stdout);
 #endif
 
-        t_start_inj=MPI_Wtime();
+        double t_start_inj_local = MPI_Wtime();
         ret = inject_energy(periodic, Nsources_local, Sources_local, energy_per_source, &planes[current], N);
         if (ret == 0)
         {
@@ -157,21 +156,25 @@ int main(int argc, char **argv)
           injected = true;
           #pragma omp flush(injected)
         }
-        t_tot_inj+=(MPI_Wtime()-t_start_inj);
+        double t_elapsed_inj = MPI_Wtime() - t_start_inj_local;
+        #pragma omp atomic
+        t_tot_inj += t_elapsed_inj;
 #ifdef VERBOSE
           printf("TASK%d: thread %d: injected\n", Rank, myid);
           printf("TASK%d: thread %d: updating plane\n", Rank, myid);
           fflush(stdout);
 #endif
 
-        t_start_calc=MPI_Wtime();
+        double t_start_calc_local = MPI_Wtime();
         update_plane(periodic, N, &planes[current], &planes[!current]);
-#ifdef VERBOSE
+      #ifdef VERBOSE
           printf("TASK%d: thread %d: updated plane\n", Rank, myid);
           fflush(stdout);
-#endif
+      #endif
 
-        t_tot_calc+=(MPI_Wtime()-t_start_calc);
+        double t_elapsed_calc = MPI_Wtime() - t_start_calc_local;
+        #pragma omp atomic
+        t_tot_calc += t_elapsed_calc;
       }
 
       if (myid > 3 && myid < 8)
@@ -189,7 +192,7 @@ int main(int argc, char **argv)
             break;
         }
 
-        t_start_send=MPI_Wtime();
+        double t_start_send_local = MPI_Wtime();
         int work_direction = myid - 4;
 #ifdef VERBOSE
           printf("TASK%d: thread %d: calculating border %d\n", Rank, myid, work_direction);
@@ -234,6 +237,11 @@ int main(int argc, char **argv)
           MPI_Send(momentary_buffer, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD);
           free(momentary_buffer);
 
+          /* account send time (blocking send) */
+          double t_elapsed_send = MPI_Wtime() - t_start_send_local;
+          #pragma omp atomic
+          t_tot_send += t_elapsed_send;
+
 #ifdef VERBOSE
             printf("TASK%d: thread %d: sent border to %d, direction %d\n", Rank, myid, neighbours[work_direction], work_direction);
             fflush(stdout);
@@ -257,13 +265,22 @@ int main(int argc, char **argv)
             printf("TASK%d: thread %d: calculated border\n", Rank, myid);
             fflush(stdout);
 #endif
+#ifndef VERBOSE
+            /* issue non-blocking send for this direction */
+#endif
             MPI_Isend(new_border, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD, &reqs[work_direction]);
 #ifdef VERBOSE
             printf("TASK%d: thread %d: sent border to %d, direction %d\n", Rank, myid, neighbours[work_direction], work_direction);
             fflush(stdout);
 #endif
         }
-        t_tot_send+=(MPI_Wtime()-t_start_send);
+        /* if Isend was used, count elapsed time up to Isend return */
+        if (x_or_y == 0)
+        {
+          double t_elapsed_send = MPI_Wtime() - t_start_send_local;
+          #pragma omp atomic
+          t_tot_send += t_elapsed_send;
+        }
       }
     }
     /* output if needed */
@@ -282,7 +299,11 @@ int main(int argc, char **argv)
 
   t1 = MPI_Wtime() - t1;
 
-  double total_time_mean, computation_time_mean, communication_time_mean, energy_injection_time_mean;
+
+      /* ensure any outstanding non-blocking sends complete before next step */
+    MPI_Waitall(Ntasks,reqs,MPI_STATUS_IGNORE);
+  
+    double total_time_mean, computation_time_mean, communication_time_mean, energy_injection_time_mean;
 
  // consider the mean for each time variable across all tasks
   MPI_Reduce(&t1, &total_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
@@ -315,13 +336,15 @@ int main(int argc, char **argv)
               S[_x_],
               S[_y_],
               Niterations);
+        fflush(f);
       fclose(f);
 
     
   }
 
   output_energy_stat(-1, &planes[!current], Niterations * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
-  printf("time taken %f\n", t1);
+  printf("PROCESS %d: time taken %f, computing %f, communicating %f, injecting %f \n", Rank, t1, t_tot_calc, t_tot_send, t_tot_inj);
+  fflush(stdout);
   memory_release(planes, buffers, border_ptr);
 
   MPI_Finalize();
