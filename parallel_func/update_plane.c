@@ -40,7 +40,6 @@ int update_plane(const int periodic,
             //
             // HINT : check the serial version for some optimization
             //
-
             double result = old[IDX(i, j)] * alpha;
             double sum_i = (old[IDX(i - 1, j)] + old[IDX(i + 1, j)]) *alpha_inverse;
             double sum_j = (old[IDX(i, j - 1)] + old[IDX(i, j + 1)]) *alpha_inverse;

@@ -9,7 +9,7 @@ int initialize_sources(int Me,
                        vec2_t **Sources)
 {
   //the first task decides each task i how many sources does it have
-  srand48(time(NULL) ^ Me);
+  //srand48(time(NULL) ^ Me);
   int *tasks_with_sources = (int *)malloc(Nsources * sizeof(int));
 
   if (Me == 0)

@@ -1,6 +1,5 @@
-
-#define DEBUG
-//#define MATRIX
+//#define VERBOSE
+#define MATRIX
 
 #include "stencil_template_parallel.h"
 
@@ -28,8 +27,7 @@ int main(int argc, char **argv)
   buffers_t buffers[2]; // old new, each has 4
   buffers_t border_ptr[2];
   int output_energy_stat_perstep;
-  register double alpha = ALPHA;
-  register double alpha_inverse = 1 / 4.0 * (1 - alpha);
+
   /* initialize MPI envrionment */
   {
     int level_obtained;
@@ -69,7 +67,12 @@ int main(int argc, char **argv)
   decomposedS[_y_]=planes[OLD].size[_y_];
   int current = OLD;
   double t1 = MPI_Wtime(); /* take wall-clock time */
-
+  double t_tot_inj=0;
+  double t_start_inj;
+  double t_tot_calc= 0;
+  double t_start_calc;
+  double t_tot_send=0;
+  double t_start_send;
   // somehow fit this in a cycle
   //  important for the future
   //  int i, j, k;
@@ -78,11 +81,12 @@ int main(int argc, char **argv)
   for (int iter = 0; iter < Niterations; ++iter)
   {
     bool injected = false;
-    if (verbose)
-    {
+
+    #ifdef VERBOSE
       printf("TASK%d: beforeOMP %d\n", Rank,S[0]);
       fflush(stdout);
-    }
+    #endif
+    
     MPI_Request reqs[8];
 
     fflush(stdout);
@@ -123,58 +127,57 @@ int main(int argc, char **argv)
         // check the various pointers of this line
         // current or not current? not sure, i think not current aka next
         //  maybe change tag to current iteration number
-        if (verbose)
-        {
+#ifdef VERBOSE
           printf("TASK%d: thread %d: waiting for Mpi_recv from %d, source %d \n", Rank, myid, neighbours[myid],myid);
           fflush(stdout);
-        }
+#endif
 
         MPI_Recv(buffers[!current][myid], decomposedS[x_or_y], MPI_DOUBLE, neighbours[myid], iter, myCOMM_WORLD, &status);
-        if (verbose)
-        {
+
+#ifdef VERBOSE
           printf("TASK%d: thread %d: recieved from %d\n", Rank, myid, neighbours[myid]);
           fflush(stdout);
-        }
+#endif        
       }
       // TODO parallelize injection, but maybe not so worth it
       // do it only IF Nsources >>> nthread
 
 #pragma omp masked filter(8)
       {
-        if (verbose)
-        {
+#ifdef VERBOSE
           printf("TASK%d: thread %d: injecting\n", Rank, myid);
           fflush(stdout);
-        }
+#endif
 
+        t_start_inj=MPI_Wtime();
         ret = inject_energy(periodic, Nsources_local, Sources_local, energy_per_source, &planes[current], N);
         if (ret == 0)
         {
-#pragma omp atomic write
+          #pragma omp atomic write
           injected = true;
-#pragma omp flush(injected)
+          #pragma omp flush(injected)
         }
-        if (verbose)
-        {
+        t_tot_inj+=(MPI_Wtime()-t_start_inj);
+#ifdef VERBOSE
           printf("TASK%d: thread %d: injected\n", Rank, myid);
-          fflush(stdout);
-        }
-
-        if (verbose)
-        {
           printf("TASK%d: thread %d: updating plane\n", Rank, myid);
           fflush(stdout);
-        }
+#endif
+
+        t_start_calc=MPI_Wtime();
         update_plane(periodic, N, &planes[current], &planes[!current]);
-        if (verbose)
-        {
+#ifdef VERBOSE
           printf("TASK%d: thread %d: updated plane\n", Rank, myid);
           fflush(stdout);
-        }
+#endif
+
+        t_tot_calc+=(MPI_Wtime()-t_start_calc);
       }
 
       if (myid > 3 && myid < 8)
       {
+        register double alpha = ALPHA;
+        register double alpha_inverse = 1 / 4.0 * (1 - alpha);
         /* busy-wait */
         int val = 0;
         while (1)
@@ -185,12 +188,13 @@ int main(int argc, char **argv)
           if (val)
             break;
         }
+
+        t_start_send=MPI_Wtime();
         int work_direction = myid - 4;
-        if (verbose)
-        {
+#ifdef VERBOSE
           printf("TASK%d: thread %d: calculating border %d\n", Rank, myid, work_direction);
           fflush(stdout);
-        }
+#endif
         int x_or_y = work_direction >> 1; // 0 if 0 or 1 and 1 if 2 or 3
         double const *old_border = border_ptr[current][work_direction];
         double const *old_buffer = buffers[current][work_direction];
@@ -198,6 +202,7 @@ int main(int argc, char **argv)
         int next_row = decomposedS[_x_];
         if (x_or_y)
         {
+          //vertical: WEST EAST
           int skips = 0;
           int plus_or_minus_one = -1;
           // TODO either do this or switch to a personalized MPI_TYPE
@@ -214,24 +219,25 @@ int main(int argc, char **argv)
             // might be illegal
             double sum_j = (old_border[skips - next_row] + old_border[skips + next_row]) * alpha_inverse;
             result += (sum_i + sum_j);
+            #pragma omp atomic write
             new_border[skips] = result;
+            #pragma omp flush(new_border)
             momentary_buffer[i] = result;
 
             skips += next_row;
           }
-          if (verbose)
-          {
+#ifdef VERBOSE
             printf("TASK%d: thread %d: calculated border %d\n", Rank, myid, work_direction);
             fflush(stdout);
-          }
+#endif
           
           MPI_Send(momentary_buffer, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD);
           free(momentary_buffer);
-          if (verbose)
-          {
+
+#ifdef VERBOSE
             printf("TASK%d: thread %d: sent border to %d, direction %d\n", Rank, myid, neighbours[work_direction], work_direction);
             fflush(stdout);
-          }
+#endif
         }
         else
         {
@@ -243,21 +249,21 @@ int main(int argc, char **argv)
             // perpendicular
             double sum_j = (old_buffer[i] + old_border[i + next_row]) * alpha_inverse;
             result += (sum_i + sum_j);
+            #pragma omp atomic write
             new_border[i] = result;
+            #pragma omp flush(new_border)
           }
-          if (verbose)
-          {
+#ifdef VERBOSE
             printf("TASK%d: thread %d: calculated border\n", Rank, myid);
             fflush(stdout);
-          }
-          MPI_Isend(new_border, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD, &reqs[work_direction]);
-
-          if (verbose)
-          {
+#endif
+            MPI_Isend(new_border, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD, &reqs[work_direction]);
+#ifdef VERBOSE
             printf("TASK%d: thread %d: sent border to %d, direction %d\n", Rank, myid, neighbours[work_direction], work_direction);
             fflush(stdout);
-          }
+#endif
         }
+        t_tot_send+=(MPI_Wtime()-t_start_send);
       }
     }
     /* output if needed */
@@ -275,6 +281,45 @@ int main(int argc, char **argv)
   }
 
   t1 = MPI_Wtime() - t1;
+
+  double total_time_mean, computation_time_mean, communication_time_mean, energy_injection_time_mean;
+
+ // consider the mean for each time variable across all tasks
+  MPI_Reduce(&t1, &total_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
+  MPI_Reduce(&t_tot_calc, &computation_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
+  MPI_Reduce(&t_tot_send, &communication_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
+  //MPI_Reduce(&t_tot_, &waiting_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
+  MPI_Reduce(&t_tot_inj, &energy_injection_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
+
+  // add the code to print the time to post process them
+  if (Rank == 0 || Ntasks == 1) {
+    const char *job_name = getenv("JOB_NAME");
+
+    const char *output_dir = "output";
+      // Build full path
+    char filename[512];
+    snprintf(filename, sizeof(filename), "%s/%s.csv", output_dir, job_name);
+
+    FILE *f = fopen(filename, "w");
+      if (!f) {
+          perror("fopen");
+          exit(1);
+      }
+
+      fprintf(f,"Mean_total_time,Mean_Computation_time,Mean_Communication_time,energy_injection_time_mean,Grid_x,Grid_y,N_iterations\n");
+      fprintf(f,"%f,%f,%f,%f,%u,%u,%d\n",
+              total_time_mean/Ntasks,
+              computation_time_mean/Ntasks,
+              communication_time_mean/Ntasks,
+              energy_injection_time_mean/Ntasks,
+              S[_x_],
+              S[_y_],
+              Niterations);
+      fclose(f);
+
+    
+  }
+
   output_energy_stat(-1, &planes[!current], Niterations * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
   printf("time taken %f\n", t1);
   memory_release(planes, buffers, border_ptr);

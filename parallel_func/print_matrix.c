@@ -52,7 +52,7 @@ inline void print_matrix_basic( int x_size, int y_size, const double* matrix_ptr
 
 
 inline void print_matrix(int rank, int Ntasks, int x_size, int y_size, const double* matrix_ptr,
-                                                                        const double *restrict buffer[], MPI_Comm Comm){
+                                                                        double *restrict buffer[], MPI_Comm Comm){
         for (int x = 0; x < Ntasks; x++) {
                 MPI_Barrier(Comm);
                 if (x == rank) {

@@ -56,7 +56,7 @@ int get_total_energy(const plane_t * plane,
 int output_energy_stat(int step, plane_t *plane, double budget, int Me, MPI_Comm *Comm);
 
 void print_matrix(int rank, int Ntask, int x_size, int y_size, const double* matrix_ptr,
-                                    const double *restrict buffer[], MPI_Comm Comm);
+                                    double *restrict buffer[], MPI_Comm Comm);
 
 int dump(const double *data, const uint size[2], const char *filename, double *min, double *max);
 
