@@ -1,6 +1,6 @@
 #include "stencil_template_parallel.h"
 
-inline int get_total_energy(plane_t *plane,
+inline int get_total_energy(const plane_t * plane,
                             double *energy)
 /*
  * NOTE: this routine a good candiadate for openmp
@@ -10,11 +10,13 @@ inline int get_total_energy(plane_t *plane,
 
     const int register xsize = plane->size[_x_];
     const int register ysize = plane->size[_y_];
-    const int register fsize = xsize + 2;
 
     double *restrict data = plane->data;
 
-#define IDX(i, j) ((j) * fsize + (i))
+    /* parallel memory layout allocates rows of length xsize and
+       adds halo rows in y (ysize + 2). Interior element (i,j) with
+       i in [1..xsize], j in [1..ysize] is at index j*xsize + (i-1) */
+#define IDX(i, j) ((j) * xsize + ((i)-1))
 
 #if defined(LONG_ACCURACY)
     long double totenergy = 0;

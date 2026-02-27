@@ -50,83 +50,82 @@ typedef struct
    =   Output                                                               =
    ========================================================================== */
 
-int get_total_energy(plane_t*,
-                            double*);
+inline int get_total_energy(const plane_t * plane,
+                            double *energy);
 
-int output_energy_stat(int,
-                       plane_t *,
-                       double,
-                       int,
-                       MPI_Comm *);
+int output_energy_stat(int step, plane_t *plane, double budget, int Me, MPI_Comm *Comm);
 
-void print_matrix(int, int, double*);
+inline void print_matrix(int x_size, int y_size, const double* matrix_ptr,
+                                    const double* west_buf, const double* east_buf);
+
+int dump(const double *data, const uint size[2], const char *filename, double *min, double *max);
 
 /* ==========================================================================
    =                                                                        =
    =   Initialization                                                       =
    ========================================================================== */
 
-int initialize_sources(int,
-                       int,
-                       MPI_Comm *,
-                       const uint[2],
-                       int,
-                       int *,
-                       vec2_t **);
+int initialize_sources(int Me,
+                       int Ntasks,
+                       MPI_Comm *Comm,
+                       vec2_t const mysize,
+                       int Nsources,
+                       int *Nsources_local,
+                       vec2_t **Sources);
 
-int initialize(MPI_Comm *,
-               int,
-               int,
-               int,
-               char **,
-               vec2_t *,
-               vec2_t *,
-               int *,
-               int *,
-               int *,
-               int *,
-               int *,
-               int *,
-               int *,
-               vec2_t **,
-               double *,
-               plane_t *,
-               buffers_t *,
-               buffers_t *);
+int initialize(MPI_Comm *Comm,
+               int Me,        // the rank of the calling process
+               int Ntasks,    // the total number of MPI ranks
+               int argc,      // the argc from command line
+               char **argv,   // the argv from command line
+               vec2_t *S,     // the size of the plane
+               vec2_t *N,     // two-uint array defining the MPI tasks' grid
+               int *periodic, // periodic-boundary tag
+               int *output_energy_stat,
+               int *verbose,
+               int *matrix,
+               int *neighbours,  // four-int array that gives back the neighbours of the calling task
+               int *Niterations, // how many iterations
+               int *Nsources,    // how many heat sources
+               int *Nsources_local,
+               vec2_t **Sources_local,
+               double *energy_per_source, // how much heat per source
+               plane_t *planes,
+               buffers_t *buffers,
+               buffers_t *borders_ptr);
 
 /* ==========================================================================
    =                                                                        =
    =   Update                                                               =
    ========================================================================== */
 
-extern int inject_energy(const int,
-                         const int,
-                         const vec2_t *,
-                         const double,
-                         plane_t *,
-                         const vec2_t);
+inline int inject_energy(const int periodic,
+                         const int Nsources,
+                         const vec2_t *Sources,
+                         const double energy,
+                         plane_t *plane,
+                         const vec2_t N);
 
-extern int update_plane(const int,
-                        const vec2_t,
-                        const plane_t *,
-                        plane_t *);
+inline int update_plane(const int periodic,
+                        const vec2_t N, // the grid of MPI tasks
+                        const plane_t *oldplane,
+                        plane_t *newplane);
 
 /* ==========================================================================
    =                                                                        =
    =   Memory managment                                                     =
    ========================================================================== */
 
-int memory_allocate(const int *,
-                    buffers_t *,
-                    buffers_t*,
-                    plane_t *);
+int memory_allocate(buffers_t *buffers_ptr,
+                    buffers_t *borders_ptr,
+                    plane_t *planes_ptr);
 
-int memory_release(plane_t *, buffers_t *, buffers_t *);
+int memory_release(plane_t *planes, buffers_t * buffers_ptr, buffers_t * border_ptr);
 
 /* ==========================================================================
    =                                                                        =
    =   Utils                                                                =
    ========================================================================== */
 
-uint simple_factorization(uint, int *, uint **);
+uint simple_factorization(uint A, int *Nfactors, uint **factors);
 

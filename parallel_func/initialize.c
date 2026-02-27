@@ -10,6 +10,7 @@ int initialize(MPI_Comm *Comm,
                int *periodic, // periodic-boundary tag
                int *output_energy_stat,
                int *verbose,
+               int *matrix,
                int *neighbours,  // four-int array that gives back the neighbours of the calling task
                int *Niterations, // how many iterations
                int *Nsources,    // how many heat sources
@@ -32,6 +33,7 @@ int initialize(MPI_Comm *Comm,
   (*S)[_y_] = 10000;
   *periodic = 0;
   *verbose = 0;
+  *matrix = 0;
   *Nsources = 4;
   *Nsources_local = 0;
   *Sources_local = NULL;
@@ -61,7 +63,8 @@ int initialize(MPI_Comm *Comm,
   while (1)
   {
     int opt;
-    while ((opt = getopt(argc, argv, ":hx:y:e:E:n:o:p:v:")) != -1)
+    /* add 'm:' so the -m <int> matrix flag is parsed */
+    while ((opt = getopt(argc, argv, ":hx:y:e:E:n:o:p:v:m:")) != -1)
     {
       switch (opt)
       {
@@ -112,7 +115,9 @@ int initialize(MPI_Comm *Comm,
       case 'v':
         *verbose = atoi(optarg);
         break;
-
+      case 'm':
+        *matrix = atoi(optarg);
+        break;
       case ':':
         printf("option -%c requires an argument\n", optopt);
         break;
@@ -268,8 +273,10 @@ int initialize(MPI_Comm *Comm,
       {
          printf("Task %4d :: "
            "\tgrid coordinates : %3d, %3d\n"
+           "grid size: $%d, %d \n"
            "\tneighbours: N %4d    E %4d    S %4d    W %4d\n",
            Me, X, Y,
+           planes[OLD].size[0],planes[OLD].size[1],
            (int)neighbours[NORTH], (int)neighbours[EAST],
            (int)neighbours[SOUTH], (int)neighbours[WEST]);
         fflush(stdout);
@@ -291,7 +298,7 @@ int initialize(MPI_Comm *Comm,
       printf("TASK %d: preallocation\n", Me);
     fflush(stdout);
   }
-  ret = memory_allocate(neighbours, buffers, borders_ptr, planes);
+  ret = memory_allocate(buffers, borders_ptr, planes);
   if (ret==1)
     return 1;
 

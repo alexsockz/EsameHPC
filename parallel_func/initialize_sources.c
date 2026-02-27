@@ -30,8 +30,8 @@ int initialize_sources(int Me,
     vec2_t *restrict helper = (vec2_t *)malloc(nlocal * sizeof(vec2_t));
     for (int s = 0; s < nlocal; s++)
     {
-      //check memory_allocate to see what is the shape of the plane
-      helper[s][_x_] = (uint)lrand48() % mysize[_x_];
+      // use 1-based interior coordinates for both x and y
+      helper[s][_x_] = 1 + (uint)lrand48() % mysize[_x_];
       helper[s][_y_] = 1 + (uint)lrand48() % mysize[_y_];
     }
 

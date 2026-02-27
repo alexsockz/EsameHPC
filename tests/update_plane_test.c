@@ -11,14 +11,14 @@ static void test_buffer_immutability()
     plane_t planes[2];
     buffers_t buffers[2];
     buffers_t borders[2];
-    int neighbours[4] = {-1, -1, -1, -1};
+    
 
     planes[OLD].size[_x_] = mysize[_x_];
     planes[OLD].size[_y_] = mysize[_y_];
     planes[NEW].size[_x_] = mysize[_x_];
     planes[NEW].size[_y_] = mysize[_y_];
 
-    int ret = memory_allocate(neighbours, buffers, borders, planes);
+    int ret = memory_allocate(buffers, borders, planes);
     assert(ret == 0);
 
     int x_size = mysize[_x_];
@@ -98,13 +98,12 @@ static void test_inject_energy_with_initialize_sources(int Me, int Ntasks, MPI_C
     plane_t planes[1];
     buffers_t buffers[1];
     buffers_t borders[1];
-    int neighbours[4] = {-1, -1, -1, -1};
 
     planes[0].size[_x_] = mysize[_x_];
     planes[0].size[_y_] = mysize[_y_];
 
     // reuse memory_allocate to get consistent layout
-    int ret = memory_allocate(neighbours, buffers, borders, planes);
+    int ret = memory_allocate(buffers, borders, planes);
     assert(ret == 0);
 
     // zero the plane data

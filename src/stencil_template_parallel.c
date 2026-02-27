@@ -32,6 +32,7 @@ int main(int argc, char **argv)
   buffers_t buffers[2]; // old new, each has 4
   buffers_t border_ptr[2];
   int output_energy_stat_perstep;
+  int matrix;
   register double alpha = ALPHA;
   register double alpha_inverse = 1 / 4.0 * (1 - alpha);
   /* initialize MPI envrionment */
@@ -55,7 +56,7 @@ int main(int argc, char **argv)
   }
 
   /* argument checking and setting */
-  int ret = initialize(&myCOMM_WORLD, Rank, Ntasks, argc, argv, &S, &N, &periodic, &output_energy_stat_perstep, &verbose,
+  int ret = initialize(&myCOMM_WORLD, Rank, Ntasks, argc, argv, &S, &N, &periodic, &output_energy_stat_perstep, &verbose, &matrix,
                        neighbours, &Niterations,
                        &Nsources, &Nsources_local, &Sources_local, &energy_per_source,
                        &planes[0], &buffers[0], border_ptr);
@@ -116,7 +117,7 @@ int main(int argc, char **argv)
 
         // #define _x_ 0
         // #define _y_ 1
-
+        
         // #define NORTH 0  _x_
         // #define SOUTH 1  _x_
         // #define EAST 2   _y_
@@ -137,10 +138,6 @@ int main(int argc, char **argv)
         if (verbose)
         {
           printf("TASK%d: thread %d: recieved from %d\n", Rank, myid, neighbours[myid]);
-          printf("sum of the border [");
-          if(neighbours[myid]!=-2){
-            print_matrix(decomposedS[x_or_y], 1, buffers[!current][myid]);
-          }
           fflush(stdout);
         }
       }
@@ -177,7 +174,6 @@ int main(int argc, char **argv)
         if (verbose)
         {
           printf("TASK%d: thread %d: updated plane\n", Rank, myid);
-          print_matrix(planes[!current].size[_x_], planes[!current].size[_y_],planes[!current].data);
           fflush(stdout);
         }
       }
@@ -233,11 +229,10 @@ int main(int argc, char **argv)
           {
             printf("TASK%d: thread %d: calculated border %d\n", Rank, myid, work_direction);
             fflush(stdout);
-            print_matrix(decomposedS[x_or_y],1,momentary_buffer);
-            fflush(stdout);
           }
           
-          MPI_Isend(momentary_buffer, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD, &reqs[work_direction]);
+          MPI_Send(momentary_buffer, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD);
+          free(momentary_buffer);
           if (verbose)
           {
             printf("TASK%d: thread %d: sent border to %d, direction %d\n", Rank, myid, neighbours[work_direction], work_direction);
@@ -260,8 +255,6 @@ int main(int argc, char **argv)
           {
             printf("TASK%d: thread %d: calculated border\n", Rank, myid);
             fflush(stdout);
-            print_matrix(decomposedS[x_or_y],1,new_border);
-            fflush(stdout);
           }
           MPI_Isend(new_border, decomposedS[x_or_y], MPI_DOUBLE, neighbours[work_direction], iter, myCOMM_WORLD, &reqs[work_direction]);
 
@@ -274,9 +267,20 @@ int main(int argc, char **argv)
       }
     }
     /* output if needed */
-    if (output_energy_stat_perstep)
+    if (output_energy_stat_perstep){
       output_energy_stat(iter, &planes[!current], (iter + 1) * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
-
+    if(matrix==1){
+      for(int x=0; x<Ntasks; x++){
+        MPI_Barrier(myCOMM_WORLD);
+        if(x == Rank){
+          printf("process %d matrix:\n", Rank);
+          print_matrix(planes[current].size[_x_], planes[current].size[_x_], planes[current].data, buffers[current][WEST], buffers[current][EAST]);
+          printf("------------------------------------------------------------------\n");
+          fflush(stdout);
+        }
+      }
+    }
+    }
     /* swap plane indexes for the new iteration */
     current = !current;
   }

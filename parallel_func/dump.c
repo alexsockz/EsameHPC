@@ -16,11 +16,6 @@ int dump(const double *data, const uint size[2], const char *filename, double *m
 
     for (int j = 0; j < size[1]; j++)
     {
-      /*
-      float y = (float)j / size[1];
-      fwrite ( &y, sizeof(float), 1, outfile );
-      */
-
       const double *restrict line = data + j * size[0];
       for (int i = 0; i < size[0]; i++)
       {

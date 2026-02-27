@@ -5,8 +5,7 @@ inline int update_plane(const int periodic,
                         const plane_t *oldplane,
                         plane_t *newplane)
 {
-    uint register fxsize = oldplane->size[_x_] + 2;
-    uint register fysize = oldplane->size[_y_] + 2;
+    uint register fxsize = oldplane->size[_x_];
 
     uint register xsize = oldplane->size[_x_];
     uint register ysize = oldplane->size[_y_];
@@ -46,6 +45,7 @@ inline int update_plane(const int periodic,
             double sum_i = (old[IDX(i - 1, j)] + old[IDX(i + 1, j)]) *alpha_inverse;
             double sum_j = (old[IDX(i, j - 1)] + old[IDX(i, j + 1)]) *alpha_inverse;
             result += (sum_i + sum_j);
+            new[IDX(i, j)] = result;
         }
 
     if (periodic)

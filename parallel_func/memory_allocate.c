@@ -1,7 +1,6 @@
 #include "stencil_template_parallel.h"
 
-int memory_allocate(const int *neighbours,
-                    buffers_t *buffers_ptr,
+int memory_allocate(buffers_t *buffers_ptr,
                     buffers_t *borders_ptr,
                     plane_t *planes_ptr)
 
@@ -44,17 +43,11 @@ int memory_allocate(const int *neighbours,
     --->> Of course you can change this layout as you prefer
 
    */
-  // printf("memory_allocate: start\n");
-  // fflush(stdout);
   if (planes_ptr == NULL)
-    // an invalid pointer has been passed
-    // manage the situation
-    ;
+    return 1;
 
   if (buffers_ptr == NULL)
-    // an invalid pointer has been passed
-    // manage the situation
-    ;
+    return 1;
 
   // ··················································
   // allocate memory for data
@@ -62,10 +55,7 @@ int memory_allocate(const int *neighbours,
   // that will contains data form neighbouring MPI tasks
   int x_size= planes_ptr[OLD].size[_x_];
   int y_size= planes_ptr[OLD].size[_y_];
-  unsigned int frame_size = (x_size) * (y_size+2);
-
-  // printf("allocating plane data (frame_size=%u)\n", frame_size);
-  // fflush(stdout);
+  unsigned int frame_size = x_size * (y_size+2);
 
   planes_ptr[OLD].data = (double *)malloc(frame_size * sizeof(double));
   if (planes_ptr[OLD].data == NULL)
@@ -100,10 +90,12 @@ int memory_allocate(const int *neighbours,
 
   //DOING ALL OF THIS EXPLICITLY TO REMEMBER WHAT IT MEANS
   //pointing to north and south for
+
   buffers_ptr[OLD][NORTH] = &(planes_ptr[OLD].data[0]);
   buffers_ptr[OLD][SOUTH] = &(planes_ptr[OLD].data[(y_size + 1) * x_size]);
   buffers_ptr[NEW][NORTH] = &(planes_ptr[NEW].data[0]);
   buffers_ptr[NEW][SOUTH] = &(planes_ptr[NEW].data[(y_size + 1) * x_size]);
+
   //allocating 2 buffers for east and west 
   buffers_ptr[OLD][WEST] = (double *)malloc(y_size * sizeof(double));
   if (buffers_ptr[OLD][WEST] != NULL)
@@ -128,12 +120,10 @@ int memory_allocate(const int *neighbours,
     //by summing 1 to a pointer i actually want it to shift by _x_
     //so for now i just point to such a place in the matrix
     //in the future i will have 2 matrices, one row major and one column major
-        borders_ptr[t][NORTH] = &(planes_ptr[t].data[x_size]);
+        borders_ptr[t][NORTH] = &(planes_ptr[t].data[1 * x_size + 0]);
         borders_ptr[t][SOUTH] = &(planes_ptr[t].data[y_size * x_size]);
         borders_ptr[t][WEST] = &planes_ptr[t].data[x_size];
         borders_ptr[t][EAST] = &planes_ptr[t].data[(2 * x_size) - 1];
   }
-      // printf("memory_allocate: done\n");
-      // fflush(stdout);
   return 0;
 }

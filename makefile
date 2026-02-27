@@ -8,7 +8,7 @@ PARALLEL_FUNC_DIR = parallel_func
 
 CC              = gcc
 MPICC           = mpicc
-CFLAGS_COM      = -Wall -Wextra -O2 -I$(LIB_DIR)
+CFLAGS_COM      = -Wall -Wextra -O3 -I$(LIB_DIR)
 CFLAGS_OMP      = -fopenmp
 
 SERIAL_SRC      = $(SRC_DIR)/stencil_template_serial.c

@@ -31,10 +31,10 @@ int main(int argc, char **argv)
 
   int injection_frequency;
   int output_energy_at_steps = 0;
-
+  int matrix=0;
   /* argument checking and setting */
   initialize(argc, argv, &S[0], &periodic, &Niterations,
-             &Nsources, &Sources, &energy_per_source, &planes[0],
+             &Nsources, &matrix, &Sources, &energy_per_source, &planes[0],
              &output_energy_at_steps, &injection_frequency);
 
   int current = OLD;
@@ -65,10 +65,20 @@ int main(int argc, char **argv)
              injected_heat, system_heat);
 
       char filename[100];
-      sprintf(filename, "plane_%05d.bin", iter);
+      snprintf(filename, 100, "plane_%05d.bin", iter);
       dump(planes[!current], S, filename, NULL, NULL);
     }
-
+    #define IDX(i, j) ((j) * (S[_x_] + 2) + (i))
+    if(matrix){
+      for(int j=0;j<S[_y_];j++){
+        printf("[");
+        for(int i=0;i<S[_x_];i++){
+          printf("%0.3f, ",planes[current][IDX(i,j)]);
+        }
+        printf("]\n");
+      }
+    #undef IDX
+    }
     /* swap planes for the new iteration */
     current = !current;
   }
@@ -107,7 +117,8 @@ int initialize(int argc,         // the argc from command line
                int *S,           // two-uint array defining the x,y dimensions of the grid
                int *periodic,    // periodic-boundary tag
                int *Niterations, // how many iterations
-               int *Nsources,    // how many heat sources
+               int *Nsources, 
+               int *matrix,   // how many heat sources
                int **Sources,
                double *energy_per_source, // how much heat per source
                double **planes,
@@ -123,6 +134,7 @@ int initialize(int argc,         // the argc from command line
   S[_y_] = 1000;
   *periodic = 0;
   *Nsources = 1;
+  *matrix=0;
   *Niterations = 99;
   *output_energy_at_steps = 0;
   *energy_per_source = 1.0;
@@ -136,7 +148,7 @@ int initialize(int argc,         // the argc from command line
   while (1)
   {
     int opt;
-    while ((opt = getopt(argc, argv, ":x:y:e:E:f:n:p:o:")) != -1)
+    while ((opt = getopt(argc, argv, ":x:y:e:E:f:n:p:o:m:")) != -1)
     {
       switch (opt)
       {
@@ -183,7 +195,8 @@ int initialize(int argc,         // the argc from command line
                "-p    whether periodic boundaries applies  [0 = false]\n"
                "-o    whether to print the energy budgest at every step [0 = false]\n");
         break;
-
+      case 'm':
+       *matrix=1;
       case ':':
         printf("option -%c requires an argument\n", optopt);
         break;

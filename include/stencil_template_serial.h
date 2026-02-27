@@ -29,18 +29,19 @@
 // ============================================================
 //
 // function prototypes
+int initialize(int argc,         // the argc from command line
+               char **argv,      // the argv from command line
+               int *S,           // two-uint array defining the x,y dimensions of the grid
+               int *periodic,    // periodic-boundary tag
+               int *Niterations, // how many iterations
+               int *Nsources, 
+               int *matrix,   // how many heat sources
+               int **Sources,
+               double *energy_per_source, // how much heat per source
+               double **planes,
+               int *output_energy_at_steps,
+               int *injection_frequency);
 
-int initialize(int,
-               char **,
-               int *,
-               int *,
-               int *,
-               int *,
-               int **,
-               double *,
-               double **,
-               int *,
-               int *);
 
 int memory_release(double *, int *);
 

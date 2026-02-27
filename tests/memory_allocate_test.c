@@ -9,7 +9,6 @@ int main() {
     buffers_t buffers[2];
     buffers_t borders_ptr[2];
     vec2_t N = {4, 4}; // 4x4 grid
-    int neighbours[4] = {1, 1, 1, 1}; // dummy values
 
     // Initialize plane sizes
     planes[OLD].size[_x_] = N[_x_];
@@ -18,7 +17,7 @@ int main() {
     planes[NEW].size[_y_] = N[_y_];
 
     // Call the function
-    int ret = memory_allocate(neighbours, buffers, borders_ptr, planes);
+    int ret = memory_allocate(buffers, borders_ptr, planes);
 
     // Test allocations
     assert(ret == 0);

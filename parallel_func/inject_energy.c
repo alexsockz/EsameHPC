@@ -7,10 +7,11 @@ inline int inject_energy(const int periodic,
                          plane_t *plane,
                          const vec2_t N)
 {
-    const uint register sizex = plane->size[_x_] + 2;
+    const uint register sizex = plane->size[_x_];
     double *restrict data = plane->data;
 
-#define IDX(i, j) ((j) * sizex + (i))
+/* interior x coordinates are in [1..sizex] so map to 0-based storage */
+#define IDX(i, j) ((j) * sizex + ((i)-1))
     for (int s = 0; s < Nsources; s++)
     {
         int x = Sources[s][_x_];
