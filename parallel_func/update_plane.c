@@ -21,7 +21,7 @@ inline int update_plane(const int periodic,
     // HINT: in any case, this loop is a good candidate
     //       for openmp parallelization
 
-    double *restrict old = oldplane->data;
+    double const *restrict old = oldplane->data;
     double *restrict new = newplane->data;
     double const alpha = ALPHA;
     double const alpha_inverse=1/ 4.0 * (1 - alpha);

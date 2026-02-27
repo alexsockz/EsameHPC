@@ -1,7 +1,20 @@
 #include "stencil_template_parallel.h"
 
-int memory_release(plane_t *planes, buffers_t * buffers_ptr, buffers_t * border_ptr)
+static void release_buffer_slot(buffers_t *buffers_ptr, int t, int d)
+{
+  /* NORTH and SOUTH point into the plane data (no malloc), don't free them */
+  if (d == NORTH || d == SOUTH)
+  {
+    buffers_ptr[t][d] = NULL;
+  }
+  else if (buffers_ptr[t][d] != NULL)
+  {
+    free(buffers_ptr[t][d]);
+    buffers_ptr[t][d] = NULL;
+  }
+}
 
+int memory_release(plane_t *planes, buffers_t * buffers_ptr, buffers_t * border_ptr)
 {
 
   if (planes != NULL)
@@ -25,18 +38,7 @@ int memory_release(plane_t *planes, buffers_t * buffers_ptr, buffers_t * border_
     {
       for (int d = 0; d < 4; ++d)
       {
-        /* NORTH and SOUTH point into the plane data (no malloc), don't free them */
-        if (d == NORTH || d == SOUTH)
-        {
-          buffers_ptr[t][d] = NULL;
-          continue;
-        }
-
-        if (buffers_ptr[t][d] != NULL)
-        {
-          free(buffers_ptr[t][d]);
-          buffers_ptr[t][d] = NULL;
-        }
+        release_buffer_slot(buffers_ptr, t, d);
       }
     }
   }

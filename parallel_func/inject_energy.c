@@ -21,13 +21,13 @@ inline int inject_energy(const int periodic,
 
         if (periodic)
         {
-            if ((N[_x_] == 1))
+            if (N[_x_] == 1)
             {
                 // propagate the boundaries if needed
                 // check the serial version
             }
 
-            if ((N[_y_] == 1))
+            if (N[_y_] == 1)
             {
                 // propagate the boundaries if needed
                 // check the serial version

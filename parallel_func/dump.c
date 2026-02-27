@@ -35,8 +35,8 @@ int dump(const double *data, const uint size[2], const char *filename, double *m
       *min = _min_;
     if (max != NULL)
       *max = _max_;
+    return 0;
   }
-
   else
     return 1;
 }

@@ -1,6 +1,6 @@
 #include "stencil_template_parallel.h"
 
-int output_energy_stat(int step, plane_t *plane, double budget, int Me, MPI_Comm *Comm)
+int output_energy_stat(int step, const plane_t *plane, double budget, int Me, MPI_Comm *Comm)
 {
 
   double system_energy = 0;

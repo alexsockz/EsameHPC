@@ -1,65 +1,18 @@
 #include "stencil_template_parallel.h"
 
-int initialize(MPI_Comm *Comm,
-               int Me,        // the rank of the calling process
-               int Ntasks,    // the total number of MPI ranks
+int process_argv(int Me,        // the rank of the calling process
                int argc,      // the argc from command line
                char **argv,   // the argv from command line
                vec2_t *S,     // the size of the plane
-               vec2_t *N,     // two-uint array defining the MPI tasks' grid
                int *periodic, // periodic-boundary tag
                int *output_energy_stat,
                int *verbose,
                int *matrix,
-               int *neighbours,  // four-int array that gives back the neighbours of the calling task
                int *Niterations, // how many iterations
                int *Nsources,    // how many heat sources
-               int *Nsources_local,
-               vec2_t **Sources_local,
-               double *energy_per_source, // how much heat per source
-               plane_t *planes,
-               buffers_t *buffers,
-               buffers_t *borders_ptr)
+               double *energy_per_source) // how much heat per source
 {
-  int halt = 0;
-  int ret;
-  
-  optind = 1; //reset index to say "look at the first option"
-
-  // ··································································
-  // set deffault values
-
-  (*S)[_x_] = 10000;
-  (*S)[_y_] = 10000;
-  *periodic = 0;
-  *verbose = 0;
-  *matrix = 0;
-  *Nsources = 4;
-  *Nsources_local = 0;
-  *Sources_local = NULL;
-  *Niterations = 1000;
-  *energy_per_source = 1.0;
-
-  if (planes == NULL)
-  {
-    // manage the situation
-  }
-
-  planes[OLD].size[0] = 0;
-  planes[NEW].size[0] = 0;
-
-  for (int i = 0; i < 4; i++)
-    neighbours[i] = MPI_PROC_NULL;
-
-  for (int b = 0; b < 2; b++)
-    for (int d = 0; d < 4; d++)
-    {
-      buffers[b][d] = NULL;
-      borders_ptr[b][d] = NULL;
-    }
-  // ··································································
-  // process the commadn line
-  //
+  int halt=0;
   while (1)
   {
     int opt;
@@ -134,6 +87,70 @@ int initialize(MPI_Comm *Comm,
 
   if (halt)
     return 1;
+  else 
+    return 0;
+}
+
+int initialize(MPI_Comm *Comm,
+               int Me,        // the rank of the calling process
+               int Ntasks,    // the total number of MPI ranks
+               int argc,      // the argc from command line
+               char **argv,   // the argv from command line
+               vec2_t *S,     // the size of the plane
+               vec2_t *N,     // two-uint array defining the MPI tasks' grid
+               int *periodic, // periodic-boundary tag
+               int *output_energy_stat,
+               int *verbose,
+               int *matrix,
+               int *neighbours,  // four-int array that gives back the neighbours of the calling task
+               int *Niterations, // how many iterations
+               int *Nsources,    // how many heat sources
+               int *Nsources_local,
+               vec2_t **Sources_local,
+               double *energy_per_source, // how much heat per source
+               plane_t *planes,
+               buffers_t *buffers,
+               buffers_t *borders_ptr)
+{
+  int ret;
+
+  optind = 1; // reset index to say "look at the first option"
+
+  // ··································································
+  // set deffault values
+
+  (*S)[_x_] = 10000;
+  (*S)[_y_] = 10000;
+  *periodic = 0;
+  *verbose = 0;
+  *matrix = 0;
+  *Nsources = 4;
+  *Nsources_local = 0;
+  *Sources_local = NULL;
+  *Niterations = 1000;
+  *energy_per_source = 1.0;
+
+  if (planes == NULL)
+  {
+    return 1;
+  }
+
+  planes[OLD].size[0] = 0;
+  planes[NEW].size[0] = 0;
+
+  for (int i = 0; i < 4; i++)
+    neighbours[i] = MPI_PROC_NULL;
+
+  for (int b = 0; b < 2; b++)
+    for (int d = 0; d < 4; d++)
+    {
+      buffers[b][d] = NULL;
+      borders_ptr[b][d] = NULL;
+    }
+  // ··································································
+  // process the commadn line
+  //
+  process_argv(Me, argc, argv, S, periodic, output_energy_stat, verbose, matrix, Niterations, Nsources, energy_per_source);
 
   // ··································································
   /*
@@ -159,11 +176,13 @@ int initialize(MPI_Comm *Comm,
 
   if (dimensions == 1)
   {
-    if ((*S)[_x_] >= (*S)[_y_]){
+    if ((*S)[_x_] >= (*S)[_y_])
+    {
       Grid[_x_] = Ntasks;
       Grid[_y_] = 1;
     }
-    else{
+    else
+    {
       Grid[_x_] = 1;
       Grid[_y_] = Ntasks;
     }
@@ -174,17 +193,24 @@ int initialize(MPI_Comm *Comm,
     uint *factors;
     uint first = 1;
     ret = simple_factorization(Ntasks, &Nf, &factors);
-    if (ret==1)
+    if (ret == 1)
       return 1;
 
-    for (int i = 0; (i < Nf) && ((Ntasks / first) / first > formfactor); i++)
+    int i = 0;
+    // Refactored loop for clarity and safety
+    while (i < Nf && ((Ntasks / first) / first > formfactor))
+    {
       first *= factors[i];
+      i++;
+    }
 
-    if ((*S)[_x_] > (*S)[_y_]){
+    if ((*S)[_x_] > (*S)[_y_])
+    {
       Grid[_x_] = Ntasks / first;
       Grid[_y_] = first;
     }
-    else{
+    else
+    {
       Grid[_x_] = first;
       Grid[_y_] = Ntasks / first;
     }
@@ -271,45 +297,44 @@ int initialize(MPI_Comm *Comm,
     {
       if (t == Me)
       {
-         printf("Task %4d :: "
-           "\tgrid coordinates : %3d, %3d\n"
-           "grid size: $%d, %d \n"
-           "\tneighbours: N %4d    E %4d    S %4d    W %4d\n",
-           Me, X, Y,
-           planes[OLD].size[0],planes[OLD].size[1],
-           (int)neighbours[NORTH], (int)neighbours[EAST],
-           (int)neighbours[SOUTH], (int)neighbours[WEST]);
+        printf("Task %4d :: "
+               "\tgrid coordinates : %3d, %3d\n"
+               "grid size: $%d, %d \n"
+               "\tneighbours: N %4d    E %4d    S %4d    W %4d\n",
+               Me, X, Y,
+               planes[OLD].size[0], planes[OLD].size[1],
+               neighbours[NORTH], neighbours[EAST],
+               neighbours[SOUTH], neighbours[WEST]);
         fflush(stdout);
 
         /* removed stray number print to avoid interleaved, buffered output */
       }
-      
-      
+
       MPI_Barrier(*Comm);
-      
     }
-    
   }
 
   // ··································································
   // allocae the needed memory
   //
-  if (*verbose) {
-      printf("TASK %d: preallocation\n", Me);
+  if (*verbose)
+  {
+    printf("TASK %d: preallocation\n", Me);
     fflush(stdout);
   }
   ret = memory_allocate(buffers, borders_ptr, planes);
-  if (ret==1)
+  if (ret == 1)
     return 1;
 
   // ··································································
   // allocae the heat sources
   //
   ret = initialize_sources(Me, Ntasks, Comm, mysize, *Nsources, Nsources_local, Sources_local);
-  if (ret==1)
+  if (ret == 1)
     return 1;
-    
-  if (*verbose) {
+
+  if (*verbose)
+  {
     printf("TASK %d: finished allocation\n", Me);
     fflush(stdout);
   }

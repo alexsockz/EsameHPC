@@ -253,9 +253,7 @@ int memory_allocate(const int size[2],
  */
 {
   if (planes_ptr == NULL)
-    // an invalid pointer has been passed
-    // manage the situation
-    ;
+    return 1;
 
   unsigned int bytes = (size[_x_] + 2) * (size[_y_] + 2);
 
