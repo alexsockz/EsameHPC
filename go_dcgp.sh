@@ -5,7 +5,7 @@
 #SBATCH -t 00:10:00
 #SBATCH --exclusive
 
-EXEC=./bin/stencil_template_parallel
+EXEC=./bin/parallel
 
 # =======================================================
 module purge
