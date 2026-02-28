@@ -1,0 +1,164 @@
+Loading openmpi/4.1.6--gcc--12.2.0
+  Loading requirement: gcc/12.2.0-binut2.41
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+[lrdn4454:3789491:0:3789538] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x10)
+==== backtrace (tid:3789538) ====
+ 0  /lib64/libucs.so.0(ucs_handle_error+0x2dc) [0x154c68c1d3cc]
+ 1  /lib64/libucs.so.0(+0x2c5b4) [0x154c68c1d5b4]
+ 2  /lib64/libucs.so.0(+0x2c78a) [0x154c68c1d78a]
+ 3  /lib64/ucx/libuct_ib.so.0(uct_dc_mlx5_ep_am_bcopy+0x2d9) [0x154c68981699]
+ 4  /lib64/libucp.so.0(+0x8a527) [0x154c69331527]
+ 5  /lib64/libucp.so.0(ucp_tag_send_nbx+0x745) [0x154c6933b975]
+ 6  /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/openmpi/mca_pml_ucx.so(mca_pml_ucx_isend+0xaa) [0x154c6959d97a]
+ 7  /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/libmpi.so.40(MPI_Isend+0x2f) [0x154c6ed2d2bf]
+ 8  ./bin/parallel() [0x402cc0]
+ 9  /leonardo/prod/spack/5.2/install/0.21/linux-rhel8-icelake/gcc-8.5.0/gcc-12.2.0-gmhym3kmbzqlpwkzhgab2xsoygsdwxcl/lib64/libgomp.so.1(+0x1e3be) [0x154c6ec8a3be]
+10  /lib64/libpthread.so.0(+0x81ca) [0x154c6e9901ca]
+11  /lib64/libc.so.6(clone+0x43) [0x154c6e5fce73]
+=================================
+[lrdn4454:3789491] *** Process received signal ***
+[lrdn4454:3789491] Signal: Segmentation fault (11)
+[lrdn4454:3789491] Signal code:  (-6)
+[lrdn4454:3789491] Failing at address: 0x1fe4a0039d2b3
+[lrdn4454:3789491] [ 0] /lib64/libpthread.so.0(+0x12cf0)[0x154c6e99acf0]
+[lrdn4454:3789491] [ 1] /lib64/ucx/libuct_ib.so.0(uct_dc_mlx5_ep_am_bcopy+0x2d9)[0x154c68981699]
+[lrdn4454:3789491] [ 2] /lib64/libucp.so.0(+0x8a527)[0x154c69331527]
+[lrdn4454:3789491] [ 3] /lib64/libucp.so.0(ucp_tag_send_nbx+0x745)[0x154c6933b975]
+[lrdn4454:3789491] [ 4] /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/openmpi/mca_pml_ucx.so(mca_pml_ucx_isend+0xaa)[0x154c6959d97a]
+[lrdn4454:3789491] [ 5] /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/libmpi.so.40(MPI_Isend+0x2f)[0x154c6ed2d2bf]
+[lrdn4454:3789491] [ 6] ./bin/parallel[0x402cc0]
+[lrdn4454:3789491] [ 7] /leonardo/prod/spack/5.2/install/0.21/linux-rhel8-icelake/gcc-8.5.0/gcc-12.2.0-gmhym3kmbzqlpwkzhgab2xsoygsdwxcl/lib64/libgomp.so.1(+0x1e3be)[0x154c6ec8a3be]
+[lrdn4454:3789491] [ 8] /lib64/libpthread.so.0(+0x81ca)[0x154c6e9901ca]
+[lrdn4454:3789491] [ 9] /lib64/libc.so.6(clone+0x43)[0x154c6e5fce73]
+[lrdn4454:3789491] *** End of error message ***
+[lrdn4449:3976801:0:3976847] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x10)
+==== backtrace (tid:3976847) ====
+ 0  /lib64/libucs.so.0(ucs_handle_error+0x2dc) [0x1494db69b3cc]
+ 1  /lib64/libucs.so.0(+0x2c5b4) [0x1494db69b5b4]
+ 2  /lib64/libucs.so.0(+0x2c78a) [0x1494db69b78a]
+ 3  /lib64/ucx/libuct_ib.so.0(uct_dc_mlx5_ep_am_bcopy+0x2d9) [0x1494db42b699]
+ 4  /lib64/libucp.so.0(+0x8a527) [0x1494dbdaf527]
+ 5  /lib64/libucp.so.0(ucp_tag_send_nbx+0x745) [0x1494dbdb9975]
+ 6  /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/openmpi/mca_pml_ucx.so(mca_pml_ucx_isend+0xaa) [0x1494e01f097a]
+ 7  /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/libmpi.so.40(MPI_Isend+0x2f) [0x1494e59802bf]
+ 8  ./bin/parallel() [0x402cc0]
+ 9  /leonardo/prod/spack/5.2/install/0.21/linux-rhel8-icelake/gcc-8.5.0/gcc-12.2.0-gmhym3kmbzqlpwkzhgab2xsoygsdwxcl/lib64/libgomp.so.1(+0x1e3be) [0x1494e58dd3be]
+10  /lib64/libpthread.so.0(+0x81ca) [0x1494e55e31ca]
+11  /lib64/libc.so.6(clone+0x43) [0x1494e524fe73]
+=================================
+[lrdn4449:3976801] *** Process received signal ***
+[lrdn4449:3976801] Signal: Segmentation fault (11)
+[lrdn4449:3976801] Signal code:  (-6)
+[lrdn4449:3976801] Failing at address: 0x1fe4a003cae61
+[lrdn4449:3976801] [ 0] /lib64/libpthread.so.0(+0x12cf0)[0x1494e55edcf0]
+[lrdn4449:3976801] [ 1] /lib64/ucx/libuct_ib.so.0(uct_dc_mlx5_ep_am_bcopy+0x2d9)[0x1494db42b699]
+[lrdn4449:3976801] [ 2] /lib64/libucp.so.0(+0x8a527)[0x1494dbdaf527]
+[lrdn4449:3976801] [ 3] /lib64/libucp.so.0(ucp_tag_send_nbx+0x745)[0x1494dbdb9975]
+[lrdn4449:3976801] [ 4] /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/openmpi/mca_pml_ucx.so(mca_pml_ucx_isend+0xaa)[0x1494e01f097a]
+[lrdn4449:3976801] [ 5] /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/libmpi.so.40(MPI_Isend+0x2f)[0x1494e59802bf]
+[lrdn4449:3976801] [ 6] ./bin/parallel[0x402cc0]
+[lrdn4449:3976801] [ 7] /leonardo/prod/spack/5.2/install/0.21/linux-rhel8-icelake/gcc-8.5.0/gcc-12.2.0-gmhym3kmbzqlpwkzhgab2xsoygsdwxcl/lib64/libgomp.so.1(+0x1e3be)[0x1494e58dd3be]
+[lrdn4449:3976801] [ 8] /lib64/libpthread.so.0(+0x81ca)[0x1494e55e31ca]
+[lrdn4449:3976801] [ 9] /lib64/libc.so.6(clone+0x43)[0x1494e524fe73]
+[lrdn4449:3976801] *** End of error message ***
+[lrdn4456:2211006:0:2211075] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x10)
+==== backtrace (tid:2211075) ====
+ 0  /lib64/libucs.so.0(ucs_handle_error+0x2dc) [0x1552f56fe3cc]
+ 1  /lib64/libucs.so.0(+0x2c5b4) [0x1552f56fe5b4]
+ 2  /lib64/libucs.so.0(+0x2c78a) [0x1552f56fe78a]
+ 3  /lib64/ucx/libuct_ib.so.0(uct_dc_mlx5_ep_am_bcopy+0x2d9) [0x1552f5462699]
+ 4  /lib64/libucp.so.0(+0x8a527) [0x1552f5e12527]
+ 5  /lib64/libucp.so.0(ucp_tag_send_nbx+0x745) [0x1552f5e1c975]
+ 6  /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/openmpi/mca_pml_ucx.so(mca_pml_ucx_isend+0xaa) [0x1552f607e97a]
+ 7  /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/libmpi.so.40(MPI_Isend+0x2f) [0x1552fb80d2bf]
+ 8  ./bin/parallel() [0x402cc0]
+ 9  /leonardo/prod/spack/5.2/install/0.21/linux-rhel8-icelake/gcc-8.5.0/gcc-12.2.0-gmhym3kmbzqlpwkzhgab2xsoygsdwxcl/lib64/libgomp.so.1(+0x1e3be) [0x1552fb76a3be]
+10  /lib64/libpthread.so.0(+0x81ca) [0x1552fb4761ca]
+11  /lib64/libc.so.6(clone+0x43) [0x1552fb0e2e73]
+=================================
+[lrdn4456:2211006] *** Process received signal ***
+[lrdn4456:2211006] Signal: Segmentation fault (11)
+[lrdn4456:2211006] Signal code:  (-6)
+[lrdn4456:2211006] Failing at address: 0x1fe4a0021bcbe
+[lrdn4456:2211006] [ 0] /lib64/libpthread.so.0(+0x12cf0)[0x1552fb480cf0]
+[lrdn4456:2211006] [ 1] /lib64/ucx/libuct_ib.so.0(uct_dc_mlx5_ep_am_bcopy+0x2d9)[0x1552f5462699]
+[lrdn4456:2211006] [ 2] /lib64/libucp.so.0(+0x8a527)[0x1552f5e12527]
+[lrdn4456:2211006] [ 3] /lib64/libucp.so.0(ucp_tag_send_nbx+0x745)[0x1552f5e1c975]
+[lrdn4456:2211006] [ 4] /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/openmpi/mca_pml_ucx.so(mca_pml_ucx_isend+0xaa)[0x1552f607e97a]
+[lrdn4456:2211006] [ 5] /leonardo/prod/opt/libraries/openmpi/4.1.6/gcc--12.2.0/lib/libmpi.so.40(MPI_Isend+0x2f)[0x1552fb80d2bf]
+[lrdn4456:2211006] [ 6] ./bin/parallel[0x402cc0]
+[lrdn4456:2211006] [ 7] /leonardo/prod/spack/5.2/install/0.21/linux-rhel8-icelake/gcc-8.5.0/gcc-12.2.0-gmhym3kmbzqlpwkzhgab2xsoygsdwxcl/lib64/libgomp.so.1(+0x1e3be)[0x1552fb76a3be]
+[lrdn4456:2211006] [ 8] /lib64/libpthread.so.0(+0x81ca)[0x1552fb4761ca]
+[lrdn4456:2211006] [ 9] /lib64/libc.so.6(clone+0x43)[0x1552fb0e2e73]
+[lrdn4456:2211006] *** End of error message ***
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun noticed that process rank 16 with PID 3789491 on node lrdn4454 exited on signal 11 (Segmentation fault).
+--------------------------------------------------------------------------
+2 total processes killed (some possibly by mpirun during cleanup)

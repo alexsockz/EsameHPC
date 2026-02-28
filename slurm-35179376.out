@@ -1,0 +1,35 @@
+Loading openmpi/4.1.6--gcc--12.2.0
+  Loading requirement: gcc/12.2.0-binut2.41
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+1000
+PROCESS 9: time taken 87.557097, computing 41.280361, communicating 0.269535, injecting 0.000310 
+PROCESS 12: time taken 87.509018, computing 42.405241, communicating 0.405577, injecting 0.000311 
+PROCESS 13: time taken 87.514511, computing 40.651187, communicating 0.411317, injecting 0.000117 
+PROCESS 5: time taken 87.539808, computing 40.815066, communicating 0.522329, injecting 0.000037 
+PROCESS 8: time taken 87.595901, computing 36.523925, communicating 0.330575, injecting 0.000037 
+PROCESS 4: time taken 87.577001, computing 45.638229, communicating 0.498201, injecting 0.000215 
+PROCESS 15: time taken 87.522611, computing 41.360696, communicating 0.327191, injecting 0.000037 
+PROCESS 10: time taken 87.595819, computing 40.651397, communicating 0.278513, injecting 0.000179 
+PROCESS 7: time taken 87.598771, computing 41.085650, communicating 0.372125, injecting 0.000185 
+PROCESS 14: time taken 87.528376, computing 41.242105, communicating 0.549395, injecting 0.000038 
+PROCESS 2: time taken 87.589176, computing 44.977264, communicating 0.334149, injecting 0.000250 
+PROCESS 6: time taken 87.583266, computing 47.511674, communicating 0.440064, injecting 0.000308 
+PROCESS 11: time taken 87.607385, computing 35.781603, communicating 0.323036, injecting 0.000036 
+PROCESS 3: time taken 87.593575, computing 36.885403, communicating 0.315781, injecting 0.000035 
+PROCESS 1: time taken 87.569863, computing 39.582131, communicating 0.195147, injecting 0.000035 
+total injected energy is 20000, system energy is 18417.4 ( in avg 8.18551e-05 per grid point)
+PROCESS 0: time taken 87.506369, computing 44.703163, communicating 0.238892, injecting 0.000211 
