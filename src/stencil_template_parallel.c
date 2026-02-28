@@ -3,6 +3,7 @@
 //#define OUTPUTENERGY
 
 #include "stencil_template_parallel.h"
+#include <stdatomic.h>
 // ------------------------------------------------------------------
 // ------------------------------------------------------------------
 
@@ -109,6 +110,7 @@ int main(int argc, char **argv)
 #endif
 
         double t_start_inj_local = MPI_Wtime();
+
         ret = inject_energy(periodic, Nsources_local, Sources_local, energy_per_source, &planes[current], N);
 
         double t_elapsed_inj = MPI_Wtime() - t_start_inj_local;
@@ -124,6 +126,7 @@ int main(int argc, char **argv)
 
     double *send_buffers[4];
     int send_counts[4];
+    atomic_int ready[4];
     for (int si = 0; si < 4; ++si) {
       send_buffers[si] = NULL;
       send_counts[si] = decomposedS[si >> 1];
@@ -136,23 +139,16 @@ int main(int argc, char **argv)
       /* single: post all the Irecv operations (only one thread makes MPI calls)
          this pins MPI usage to a single thread (MPI_THREAD_FUNNELED safe)
       */
-      #pragma omp single
+      #pragma omp single nowait
       {
         for (int i = 0; i < 4; ++i)
         {
           int x_or_y = i >> 1;
           MPI_Irecv(buffers[!current][i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[4 + i]);
         }
-      }
 
-      /* start iteration compute timer (only one thread records the timestamp) */
-      #pragma omp single
-      {
         t_start_calc_iter = MPI_Wtime();
-      }
 
-      /* compute the border buffers in parallel (no MPI calls here) */
-      #pragma omp for schedule(dynamic)
       for (int i = 0; i < 4; ++i)
       {
         int x_or_y = i >> 1;
@@ -173,21 +169,11 @@ int main(int argc, char **argv)
         }
 
         update_border_calc(i, decomposedS, old_border, old_buffer, new_border, momentary_buffer);
+
+        /* mark this direction as ready for sending */
+        atomic_store_explicit(&ready[i], 1, memory_order_release);
+        MPI_Isend(send_buffers[i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[i]);
       }
-
-      /* ensure all send buffers are ready before issuing MPI_Isend */
-      #pragma omp barrier
-
-      /* single thread issues all non-blocking sends (MPI calls confined here)
-         do not wait for them here to preserve overlap with computation
-      */
-      #pragma omp single
-      {
-        for (int i = 0; i < 4; ++i)
-        {
-          int x_or_y = i >> 1;
-          MPI_Isend(send_buffers[i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[i]);
-        }
       }
 
       /* compute the inner points in parallel; `update_plane` contains the
