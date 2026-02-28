@@ -1,4 +1,5 @@
 bin/*
 .vscode
+venv/*
 
 compile_commands.json
