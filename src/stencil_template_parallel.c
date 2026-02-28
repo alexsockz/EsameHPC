@@ -129,6 +129,8 @@ int main(int argc, char **argv)
       send_counts[si] = decomposedS[si >> 1];
     }
 
+    /* per-iteration compute timer (shared across threads in the parallel region) */
+    double t_start_calc_iter = 0.0;
     #pragma omp parallel
     {
       /* single: post all the Irecv operations (only one thread makes MPI calls)
@@ -141,6 +143,12 @@ int main(int argc, char **argv)
           int x_or_y = i >> 1;
           MPI_Irecv(buffers[!current][i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[4 + i]);
         }
+      }
+
+      /* start iteration compute timer (only one thread records the timestamp) */
+      #pragma omp single
+      {
+        t_start_calc_iter = MPI_Wtime();
       }
 
       /* compute the border buffers in parallel (no MPI calls here) */
@@ -178,11 +186,7 @@ int main(int argc, char **argv)
         for (int i = 0; i < 4; ++i)
         {
           int x_or_y = i >> 1;
-          double t_start_send_local = MPI_Wtime();
           MPI_Isend(send_buffers[i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[i]);
-          double t_elapsed_send = MPI_Wtime() - t_start_send_local;
-          #pragma omp atomic
-          t_tot_send += t_elapsed_send;
         }
       }
 
@@ -191,11 +195,20 @@ int main(int argc, char **argv)
          across available threads */
       update_plane(periodic, N, &planes[current], &planes[!current]);
 
-      /* single thread waits for all outstanding requests (sends + recvs)
-         and frees any per-iteration allocated send buffers */
+      /* single thread: account compute time, wait for outstanding
+         requests (sends + recvs) and free any per-iteration allocated send buffers */
       #pragma omp single
       {
+        /* computation time for this iteration: borders + inner plane */
+        double t_elapsed_calc = MPI_Wtime() - t_start_calc_iter;
+        t_tot_calc += t_elapsed_calc;
+
+        /* measure actual communication waiting time (overlap excluded)
+           by timing the Waitall that ensures completion of sends/recvs */
+        double t_start_comm_local = MPI_Wtime();
         MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
+        double t_elapsed_comm = MPI_Wtime() - t_start_comm_local;
+        t_tot_send += t_elapsed_comm;
 
         for (int i = 0; i < 4; ++i)
         {
