@@ -253,7 +253,7 @@ int main(int argc, char **argv)
   if (Rank == 0 || Ntasks == 1) {
     const char *job_name = getenv("JOB_NAME");
 
-    const char *output_dir = "output";
+    const char *output_dir = "output/border-inner-checkifarrived";
       // Build full path
     char filename[512];
     snprintf(filename, sizeof(filename), "%s/%s.csv", output_dir, job_name);
