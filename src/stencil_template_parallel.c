@@ -35,11 +35,11 @@ int main(int argc, char **argv)
 
     // NOTE: change MPI_FUNNELED if appropriate
     //
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &level_obtained);
-    if (level_obtained < MPI_THREAD_MULTIPLE)
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &level_obtained);
+    if (level_obtained < MPI_THREAD_FUNNELED)
     {
       printf("MPI_thread level obtained is %d instead of %d\n",
-             level_obtained, MPI_THREAD_MULTIPLE);
+             level_obtained, MPI_THREAD_FUNNELED);
       fflush(stdout);
       MPI_Finalize();
       exit(1);
