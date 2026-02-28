@@ -37,11 +37,11 @@ int main(int argc, char **argv)
 
     // NOTE: change MPI_FUNNELED if appropriate
     //
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &level_obtained);
-    if (level_obtained < MPI_THREAD_FUNNELED)
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &level_obtained);
+    if (level_obtained < MPI_THREAD_MULTIPLE)
     {
       printf("MPI_thread level obtained is %d instead of %d\n",
-             level_obtained, MPI_THREAD_FUNNELED);
+             level_obtained, MPI_THREAD_MULTIPLE);
       fflush(stdout);
       MPI_Finalize();
       exit(1);
@@ -80,6 +80,8 @@ int main(int argc, char **argv)
   //  #pragma omp parallel private(i,k) means that i and k will be unique for each thread and not shared
   
   MPI_Request reqs[8];
+
+  #pragma parallel omp for ordered
   for (int iter = 0; iter < Niterations; ++iter)
   {
     #ifdef VERBOSE
@@ -87,7 +89,7 @@ int main(int argc, char **argv)
       fflush(stdout);
     #endif
     
-    for (int ri = 0; ri < 8; ++ri) reqs[ri] = MPI_REQUEST_NULL;
+    
     /* new energy from sources */
 
     /* -------------------------------------- */
@@ -108,14 +110,17 @@ int main(int argc, char **argv)
           printf("TASK%d: thread %d: injecting\n", Rank, myid);
           fflush(stdout);
 #endif
+        #pragma omp master
+        {
+          for (int ri = 0; ri < 8; ++ri) reqs[ri] = MPI_REQUEST_NULL;
+          double t_start_inj_local = MPI_Wtime();
 
-        double t_start_inj_local = MPI_Wtime();
+          ret = inject_energy(periodic, Nsources_local, Sources_local, energy_per_source, &planes[current], N);
 
-        ret = inject_energy(periodic, Nsources_local, Sources_local, energy_per_source, &planes[current], N);
-
-        double t_elapsed_inj = MPI_Wtime() - t_start_inj_local;
-        t_tot_inj += t_elapsed_inj;
-
+          double t_elapsed_inj = MPI_Wtime() - t_start_inj_local;
+          t_tot_inj += t_elapsed_inj;
+        }
+        #pragma omp barrier
     /* New parallel pattern:
        - one thread posts the Irecv
        - worker threads compute the border buffers
@@ -134,20 +139,20 @@ int main(int argc, char **argv)
 
     /* per-iteration compute timer (shared across threads in the parallel region) */
     double t_start_calc_iter = 0.0;
-    #pragma omp parallel
-    {
+    double t_start_comm_local= 0.0;
+
       /* single: post all the Irecv operations (only one thread makes MPI calls)
          this pins MPI usage to a single thread (MPI_THREAD_FUNNELED safe)
       */
-      #pragma omp single nowait
+      #pragma omp master
       {
+        t_start_comm_local = MPI_Wtime();
         for (int i = 0; i < 4; ++i)
         {
           int x_or_y = i >> 1;
           MPI_Irecv(buffers[!current][i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[4 + i]);
         }
 
-        t_start_calc_iter = MPI_Wtime();
 
       for (int i = 0; i < 4; ++i)
       {
@@ -175,24 +180,30 @@ int main(int argc, char **argv)
         MPI_Isend(send_buffers[i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[i]);
       }
       }
+      #pragma omp single nowait
+      {
+        t_start_calc_iter = MPI_Wtime();
+      }
 
       /* compute the inner points in parallel; `update_plane` contains the
          appropriate OpenMP `for` pragma so calling it here will distribute work
          across available threads */
       update_plane(periodic, N, &planes[current], &planes[!current]);
 
-      /* single thread: account compute time, wait for outstanding
-         requests (sends + recvs) and free any per-iteration allocated send buffers */
-      #pragma omp single
+      #pragma omp single nowait
       {
-        /* computation time for this iteration: borders + inner plane */
         double t_elapsed_calc = MPI_Wtime() - t_start_calc_iter;
         t_tot_calc += t_elapsed_calc;
-
+      }
+      /* single thread: account compute time, wait for outstanding
+         requests (sends + recvs) and free any per-iteration allocated send buffers */
+      #pragma omp master
+      {
         /* measure actual communication waiting time (overlap excluded)
            by timing the Waitall that ensures completion of sends/recvs */
-        double t_start_comm_local = MPI_Wtime();
+        
         MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
+        
         double t_elapsed_comm = MPI_Wtime() - t_start_comm_local;
         t_tot_send += t_elapsed_comm;
 
@@ -206,7 +217,8 @@ int main(int argc, char **argv)
           }
         }
       }
-    }
+    
+      /* swap plane indexes for the new iteration */
     current = !current;
     /* output if needed */
         /* output if needed */
@@ -220,7 +232,6 @@ int main(int argc, char **argv)
 
     }
 #endif
-    /* swap plane indexes for the new iteration */
   }
 
   t1 = MPI_Wtime() - t1;
