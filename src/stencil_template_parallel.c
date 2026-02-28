@@ -163,7 +163,7 @@ int main(int argc, char **argv)
 
           /* wait for injection to complete (preserve original behavior) */
           int val = 0;
-          while (val)
+          while (!val)
           {
 #pragma omp atomic read
             val = injected;
@@ -239,7 +239,7 @@ int main(int argc, char **argv)
 
 
       /* ensure any outstanding non-blocking sends complete before next step */
-    MPI_Waitall(Ntasks,reqs,MPI_STATUS_IGNORE);
+      MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
   
     double total_time_mean, computation_time_mean, communication_time_mean, energy_injection_time_mean;
 
