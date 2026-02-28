@@ -27,7 +27,7 @@ int main(int argc, char **argv)
   plane_t planes[2];
   buffers_t buffers[2]; // old new, each has 4
   buffers_t border_ptr[2];
-  int output_energy_stat_perstep;
+  int output_energy_stat_perstep=0;
 
   /* initialize MPI envrionment */
   {
