@@ -80,8 +80,10 @@ int main(int argc, char **argv)
   //  #pragma omp parallel private(i,k) means that i and k will be unique for each thread and not shared
   
   MPI_Request reqs[8];
-
-  #pragma parallel omp for ordered
+    double t_start_calc_iter = 0.0;
+    double t_start_comm_local= 0.0;
+  #pragma omp parallel
+  {
   for (int iter = 0; iter < Niterations; ++iter)
   {
     #ifdef VERBOSE
@@ -138,8 +140,7 @@ int main(int argc, char **argv)
     }
 
     /* per-iteration compute timer (shared across threads in the parallel region) */
-    double t_start_calc_iter = 0.0;
-    double t_start_comm_local= 0.0;
+
 
       /* single: post all the Irecv operations (only one thread makes MPI calls)
          this pins MPI usage to a single thread (MPI_THREAD_FUNNELED safe)
@@ -233,7 +234,7 @@ int main(int argc, char **argv)
     }
 #endif
   }
-
+}
   t1 = MPI_Wtime() - t1;
 
 
