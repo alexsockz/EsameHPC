@@ -26,7 +26,7 @@ int update_plane(const int periodic,
     double const alpha = ALPHA;
     double const alpha_inverse=1/ 4.0 * (1 - alpha);
 
-    #pragma omp parallel for collapse(2) schedule(static)
+    #pragma omp for collapse(2) schedule(static) nowait
     for (uint j = 2; j < ysize-1; j++)//exclude borders and halo
         for (uint i = 1; i < xsize; i++)//exclude borders
         {

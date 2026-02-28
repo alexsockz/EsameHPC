@@ -1,5 +1,6 @@
 //#define VERBOSE
 //#define MATRIX
+//#define OUTPUTENERGY
 
 #include "stencil_template_parallel.h"
 // ------------------------------------------------------------------
@@ -80,17 +81,12 @@ int main(int argc, char **argv)
   MPI_Request reqs[8];
   for (int iter = 0; iter < Niterations; ++iter)
   {
-    bool injected = false;
-
     #ifdef VERBOSE
       printf("TASK%d: beforeOMP %d\n", Rank,S[0]);
       fflush(stdout);
     #endif
     
     for (int ri = 0; ri < 8; ++ri) reqs[ri] = MPI_REQUEST_NULL;
-
-    fflush(stdout);
-
     /* new energy from sources */
 
     /* -------------------------------------- */
@@ -107,10 +103,6 @@ int main(int argc, char **argv)
     /* --------------------------------------  */
     /* update grid points */
 
-#pragma omp parallel
-    {
-#pragma omp masked
-      {
 #ifdef VERBOSE
           printf("TASK%d: thread %d: injecting\n", Rank, myid);
           fflush(stdout);
@@ -118,111 +110,108 @@ int main(int argc, char **argv)
 
         double t_start_inj_local = MPI_Wtime();
         ret = inject_energy(periodic, Nsources_local, Sources_local, energy_per_source, &planes[current], N);
-        if (ret == 0)
-        {
-          #pragma omp atomic write
-          injected = true;
-          #pragma omp flush(injected)
-        }
+
         double t_elapsed_inj = MPI_Wtime() - t_start_inj_local;
-        #pragma omp atomic
         t_tot_inj += t_elapsed_inj;
-#ifdef VERBOSE
-          printf("TASK%d: thread %d: injected\n", Rank, myid);
-          printf("TASK%d: thread %d: updating plane\n", Rank, myid);
-          fflush(stdout);
-#endif
 
-        double t_start_calc_local = MPI_Wtime();
-        update_plane(periodic, N, &planes[current], &planes[!current]);
-      #ifdef VERBOSE
-          printf("TASK%d: thread %d: updated plane\n", Rank, myid);
-          fflush(stdout);
-      #endif
+    /* New parallel pattern:
+       - one thread posts the Irecv
+       - worker threads compute the border buffers
+       - single thread issues non-blocking Isend for all directions (only this thread calls MPI send)
+       - worker threads (and the master) run update_plane concurrently
+       - master waits for all requests and frees per-iteration allocated buffers
+    */
 
-        double t_elapsed_calc = MPI_Wtime() - t_start_calc_local;
-        #pragma omp atomic
-        t_tot_calc += t_elapsed_calc;
-      }
-              /* For the 4 communication directions use a small parallel region that
-         provides each worker with a private `i` in 0..3. This makes the send
-         thread-agnostic while keeping the original logic and injection
-         synchronization intact. */
-        int i;
-        #pragma omp for schedule(dynamic) private(i)
-        for (i = 0; i < 4; i++)
+    double *send_buffers[4];
+    int send_counts[4];
+    for (int si = 0; si < 4; ++si) {
+      send_buffers[si] = NULL;
+      send_counts[si] = decomposedS[si >> 1];
+    }
+
+    #pragma omp parallel
+    {
+      /* single: post all the Irecv operations (only one thread makes MPI calls)
+         this pins MPI usage to a single thread (MPI_THREAD_FUNNELED safe)
+      */
+      #pragma omp single
+      {
+        for (int i = 0; i < 4; ++i)
         {
-          MPI_Status status;
-          int x_or_y = i >> 1;                     // 0 if 0 or 1 and 1 if 2 or 3
-
-#ifdef VERBOSE
-          printf("TASK%d: comm-thread %d: posting Irecv from %d\n", Rank, i, neighbours[i]);
-          fflush(stdout);
-#endif
+          int x_or_y = i >> 1;
           MPI_Irecv(buffers[!current][i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[4 + i]);
-
-          /* wait for injection to complete (preserve original behavior) */
-          int val = 0;
-          while (!val)
-          {
-#pragma omp atomic read
-            val = injected;
-#pragma omp flush(injected)
-          }
-
-          double t_start_send_local = MPI_Wtime();
-#ifdef VERBOSE
-            printf("TASK%d: comm-thread %d: calculating border %d\n", Rank, i, i);
-            fflush(stdout);
-#endif
-          double const *old_border = border_ptr[current][i];
-          double const *old_buffer = buffers[current][i];
-          double *new_border = border_ptr[!current][i];
-
-          double *momentary_buffer = NULL;
-          if (x_or_y)
-          {
-            momentary_buffer = (double *)malloc(decomposedS[_y_] * sizeof(double));
-          }
-
-          update_border_calc(i, decomposedS, old_border, old_buffer, new_border, momentary_buffer);
-
-          if (x_or_y)
-          {
-            MPI_Isend(momentary_buffer, decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[i]);
-
-            double t_elapsed_send = MPI_Wtime() - t_start_send_local;
-            #pragma omp atomic
-            t_tot_send += t_elapsed_send;
-
-            if (reqs[i] != MPI_REQUEST_NULL)
-            {
-              MPI_Wait(&reqs[i], MPI_STATUS_IGNORE);
-              reqs[i] = MPI_REQUEST_NULL;
-            }
-            free(momentary_buffer);
-          }
-          else
-          {
-            MPI_Isend(new_border, decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[i]);
-
-            double t_elapsed_send = MPI_Wtime() - t_start_send_local;
-            #pragma omp atomic
-            t_tot_send += t_elapsed_send;
-
-            if (reqs[i] != MPI_REQUEST_NULL)
-            {
-              MPI_Wait(&reqs[i], MPI_STATUS_IGNORE);
-              reqs[i] = MPI_REQUEST_NULL;
-            }
-          }
-
-          /* ensure the posted Irecv completes before exiting this worker */
-          MPI_Wait(&reqs[4 + i], &status);
         }
       }
+
+      /* compute the border buffers in parallel (no MPI calls here) */
+      #pragma omp for schedule(dynamic)
+      for (int i = 0; i < 4; ++i)
+      {
+        int x_or_y = i >> 1;
+        double const *old_border = border_ptr[current][i];
+        double const *old_buffer = buffers[current][i];
+        double *new_border = border_ptr[!current][i];
+        double *momentary_buffer = NULL;
+
+        if (x_or_y)
+        {
+          momentary_buffer = (double *)malloc(decomposedS[_y_] * sizeof(double));
+          send_buffers[i] = momentary_buffer;
+        }
+        else
+        {
+          /* for the other directions we can use the new_border buffer directly */
+          send_buffers[i] = new_border;
+        }
+
+        update_border_calc(i, decomposedS, old_border, old_buffer, new_border, momentary_buffer);
+      }
+
+      /* ensure all send buffers are ready before issuing MPI_Isend */
+      #pragma omp barrier
+
+      /* single thread issues all non-blocking sends (MPI calls confined here)
+         do not wait for them here to preserve overlap with computation
+      */
+      #pragma omp single
+      {
+        for (int i = 0; i < 4; ++i)
+        {
+          int x_or_y = i >> 1;
+          double t_start_send_local = MPI_Wtime();
+          MPI_Isend(send_buffers[i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[i]);
+          double t_elapsed_send = MPI_Wtime() - t_start_send_local;
+          #pragma omp atomic
+          t_tot_send += t_elapsed_send;
+        }
+      }
+
+      /* compute the inner points in parallel; `update_plane` contains the
+         appropriate OpenMP `for` pragma so calling it here will distribute work
+         across available threads */
+      update_plane(periodic, N, &planes[current], &planes[!current]);
+
+      /* single thread waits for all outstanding requests (sends + recvs)
+         and frees any per-iteration allocated send buffers */
+      #pragma omp single
+      {
+        MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
+
+        for (int i = 0; i < 4; ++i)
+        {
+          int x_or_y = i >> 1;
+          if (x_or_y && send_buffers[i] != NULL)
+          {
+            free(send_buffers[i]);
+            send_buffers[i] = NULL;
+          }
+        }
+      }
+    }
+    current = !current;
     /* output if needed */
         /* output if needed */
+#ifdef OUTPUTENERGY
     if (output_energy_stat_perstep)
     {
         output_energy_stat(iter, &planes[!current], (iter + 1) * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
@@ -231,8 +220,8 @@ int main(int argc, char **argv)
 #endif
 
     }
+#endif
     /* swap plane indexes for the new iteration */
-    current = !current;
   }
 
   t1 = MPI_Wtime() - t1;
