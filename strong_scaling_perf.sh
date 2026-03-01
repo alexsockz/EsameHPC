@@ -1,20 +1,37 @@
 #!/bin/bash
+#SBATCH --job-name=strong_scaling
+#SBATCH --partition=dcgp_usr_prod
+#SBATCH --account=UTS25_Tornator_0
+#SBATCH --time=00:30:00
+#SBATCH --nodes=16
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=14
+#SBATCH --exclusive
 
-echo "Strong scaling: multinode scalability study"
+# Paths
+OMPI_DIR=$HOME/openmpi-5
+EXEC=./bin/stencil_parallel
+WRAPPER=./wrapper.sh
 
-N_STEPS=1000
-GRID_SIZE_X=15000
-GRID_SIZE_Y=15000
-OMP_THREADS=14
-CORES_PER_NODE=112
-NTASKS_PER_NODE=8
+# Environment
+module purge
+module load gcc/12.2.0
+export OMPI_DIR=$HOME/openmpi-5
+export PATH=$OMPI_DIR/bin:$PATH
+export LD_LIBRARY_PATH=$OMPI_DIR/lib:$HOME/lib:$LD_LIBRARY_PATH
+
+# Performance Settings
+export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
+export OMP_PLACES=cores
+export OMP_PROC_BIND=close
+
+echo "Starting MPI Strong Scaling..."
 
 for NODES in 1 2 4 8 16; do
-    TOTAL_TASKS=$((NODES * NTASKS_PER_NODE))
-    
-    JOB_NAME="strong_scaling_${NODES}n_${TOTAL_TASKS}t"
+    TOTAL_RANKS=$(( NODES * ${SLURM_NTASKS_PER_NODE} ))
+    echo "Running on $NODES nodes ($TOTAL_RANKS total ranks)..."
 
-    sbatch --nodes=${NODES} --ntasks-per-node=${NTASKS_PER_NODE} --cpus-per-task=${OMP_THREADS} --job-name=${JOB_NAME} --export=ALL,GRID_SIZE_X=${GRID_SIZE_X},GRID_SIZE_Y=${GRID_SIZE_Y},N_STEPS=${N_STEPS},OMP_THREADS=${OMP_THREADS},JOB_NAME=${JOB_NAME},TOTAL_TASKS=${TOTAL_TASKS} go_dcgp_perf.sh
+    mpirun -np $TOTAL_RANKS \
+    --map-by ppr:${SLURM_NTASKS_PER_NODE}:node:PE=${SLURM_CPUS_PER_TASK} \
+    $WRAPPER ${EXEC} -x $GRID -y $GRID -n 500 -p 0 -e 500 -E 25 -f 0.05 -m 1 -v 0 -o 0 >> run.out
 done
-
-echo "All Strong Scaling jobs submitted."

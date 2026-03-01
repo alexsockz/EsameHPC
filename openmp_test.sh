@@ -11,7 +11,7 @@
 
 # Paths
 OMPI_DIR=$HOME/openmpi-5
-EXEC=./bin/stencil_parallel
+EXEC=./stencil_parallel
 
 # Environment
 module purge
@@ -38,8 +38,4 @@ for THREADS in 1 2 4 8 16 32 56 84 112; do
         --bind-to none \
         --tag-output \
         ${EXEC} -x 16384 -y 16384 -n 500 -p 0 -e 500 -E 25 -f 0.05 -m 1 >> run.out
-
-    mpirun -np ${SLURM_NTASKS} \
-    --map-by ppr:${SLURM_NTASKS_PER_NODE}:node:PE=${SLURM_CPUS_PER_TASK} \
-    $WRAPPER ${EXEC} -x $GRID -y $GRID -n 500 -p 0 -e 500 -E 25 -f 0.05 -m 1 -v 0 -o 0 >> run.out
 done
