@@ -11,7 +11,7 @@
 module load openmpi/4.1.6--gcc--12.2.0
 
 # Paths
-OMPI_DIR=$HOME/openmpi-5
+OMPI_DIR=$HOME/openmpi-4
 EXEC=./bin/stencil_parallel
 WRAPPER=./wrapper.sh
 
@@ -50,6 +50,7 @@ echo "Starting MPI Strong Scaling..."
 for NODES in 1 2 4 8 16; do
     TOTAL_RANKS=$(( NODES * NTASKS_PER_NODE ))
     echo "Running on $NODES nodes ($TOTAL_RANKS total ranks)..."
+    RUN_LABEL="stron_scaling"
 
     ${MPIRUN} -np $TOTAL_RANKS --map-by ppr:${NTASKS_PER_NODE}:node:PE=${CPUS_PER_TASK} $WRAPPER ${EXEC} -x $GRID -y $GRID -n 500 -p 0 -e 500 -E 25 -f 0.05 -m 1 -v 0 -o 0 >> run.out
 done

@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 
 # Determine rank id from common MPI/Slurm env vars
 RANK_ID=${OMPI_COMM_WORLD_RANK:-${PMI_RANK:-${SLURM_PROCID:-0}}}

@@ -6,8 +6,6 @@
 #SBATCH --exclusive
 
 EXEC=./bin/parallel
-# Wrapper used to run perf per-rank. Can be overridden in environment.
-WRAPPER=${WRAPPER:-./wrapper.sh}
 
 # =======================================================
 module purge
@@ -34,9 +32,27 @@ fi
 : ${MPI_ARGS:=${MPI_ARGS_DEFAULT}}
 
 if [[ ${TOTAL_TASKS} -eq 1 ]]; then
-    # Run under wrapper so perf can collect single-rank stats as well
-    ${WRAPPER} ${EXEC} -n ${N_STEPS} -x ${GRID_SIZE_X} -y ${GRID_SIZE_Y} -p 1 -o 0
+    # If PERF is set (non-empty and not 0) run the single-task executable under perf
+    if [ -n "${PERF}" ] && [ "${PERF}" != "0" ]; then
+        PERF_CMD=(perf stat -e cache-misses,cache-references)
+        if [ -n "${PERF_OUTPUT}" ]; then
+            PERF_CMD+=( -o "${PERF_OUTPUT}" )
+        fi
+        PERF_CMD+=( -- )
+        "${PERF_CMD[@]}" ${EXEC} -n ${N_STEPS} -x ${GRID_SIZE_X} -y ${GRID_SIZE_Y} -p 1 -o 0
+    else
+        ${EXEC} -n ${N_STEPS} -x ${GRID_SIZE_X} -y ${GRID_SIZE_Y} -p 1 -o 0
+    fi
 else
-    # Launch MPI ranks under wrapper so perf runs on each rank
-    mpirun ${MPI_ARGS} -np ${TOTAL_TASKS} ${WRAPPER} ${EXEC} -n ${N_STEPS} -x ${GRID_SIZE_X} -y ${GRID_SIZE_Y} -p 1 -o 0 -e 10 -E 2
+    # For multi-rank runs, prefer perf in system-wide mode (-a) to capture distributed activity
+    if [ -n "${PERF}" ] && [ "${PERF}" != "0" ]; then
+        if [ -n "${PERF_OUTPUT}" ]; then
+            perf stat -a -e cache-misses,cache-references -o "${PERF_OUTPUT}" -- \
+                mpirun ${MPI_ARGS} -np ${TOTAL_TASKS} ${EXEC} -n ${N_STEPS} -x ${GRID_SIZE_X} -y ${GRID_SIZE_Y} -p 1 -o 0 -e 10 -E 2
+        else
+            perf stat -a -e cache-misses,cache-references -- mpirun ${MPI_ARGS} -np ${TOTAL_TASKS} ${EXEC} -n ${N_STEPS} -x ${GRID_SIZE_X} -y ${GRID_SIZE_Y} -p 1 -o 0 -e 10 -E 2
+        fi
+    else
+        mpirun ${MPI_ARGS} -np ${TOTAL_TASKS} ${EXEC} -n ${N_STEPS} -x ${GRID_SIZE_X} -y ${GRID_SIZE_Y} -p 1 -o 0 -e 10 -E 2
+    fi
 fi
