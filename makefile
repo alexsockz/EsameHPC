@@ -8,7 +8,9 @@ PARALLEL_FUNC_DIR = parallel_func
 
 CC              = gcc
 MPICC           = mpicc
-CFLAGS_COM      = -Wall -Wextra -O3 -I$(LIB_DIR)
+# Performance tuning flags: can be overridden by setting PERF_FLAGS in environment
+PERF_FLAGS ?= -march=native -funroll-loops -fomit-frame-pointer -ffast-math
+CFLAGS_COM      = -Wall -Wextra -O3 -I$(LIB_DIR) $(PERF_FLAGS)
 CFLAGS_OMP      = -fopenmp
 
 SERIAL_SRC      = $(SRC_DIR)/stencil_template_serial.c
