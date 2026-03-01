@@ -14,18 +14,21 @@ set -euo pipefail
 
 # Executable and wrapper (no spaces around =)
 
+# If running under Slurm these are usually set; fall back to sensible defaults.
+# Try SLURM_NNODES, otherwise use SLURM_JOB_NUM_NODES, otherwise 1.
+SLURM_NNODES=${SLURM_NNODES:-${SLURM_JOB_NUM_NODES:-1}}
+
 SLURM_NTASKS_PER_NODE=${SLURM_NTASKS_PER_NODE:-8}
 SLURM_CPUS_PER_TASK=${SLURM_CPUS_PER_TASK:-14}
+
+# Total MPI ranks
 TOTAL_RANKS=$(( SLURM_NTASKS_PER_NODE * SLURM_NNODES ))
 GRID_SIZE_X=${GRID_SIZE_X:-15000}
 GRID_SIZE_Y=${GRID_SIZE_Y:-15000}
 EXEC="./bin/parallel"
 WRAPPER="./wrapper.sh"
 
-# Defaults if not provided by environment
-: ${TOTAL_RANKS:=1}
-: ${SLURM_NTASKS_PER_NODE:=1}
-: ${SLURM_CPUS_PER_TASK:=1}
+## Defaults handled above; removed redundant fallbacks
 
 # Load modules to match runtime environment
 module purge
