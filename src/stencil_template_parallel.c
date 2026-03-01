@@ -1,6 +1,6 @@
-//#define VERBOSE
-//#define MATRIX
-//#define OUTPUTENERGY
+// #define VERBOSE
+// #define MATRIX
+// #define OUTPUTENERGY
 
 #include "stencil_template_parallel.h"
 #include <stdatomic.h>
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   plane_t planes[2];
   buffers_t buffers[2]; // old new, each has 4
   buffers_t border_ptr[2];
-  int output_energy_stat_perstep=0;
+  int output_energy_stat_perstep = 0;
 
   /* initialize MPI envrionment */
   {
@@ -67,142 +67,127 @@ int main(int argc, char **argv)
     MPI_Finalize();
     return 0;
   }
-  decomposedS[_x_]=planes[OLD].size[_x_];
-  decomposedS[_y_]=planes[OLD].size[_y_];
+  decomposedS[_x_] = planes[OLD].size[_x_];
+  decomposedS[_y_] = planes[OLD].size[_y_];
   int current = OLD;
-  double t1 = MPI_Wtime(); /* take wall-clock time */
-  double t_tot_inj=0;
-  double t_tot_calc= 0;
-  double t_tot_send=0;
-  double t_tot_border=0; /* time spent computing border buffers only */
-    /* preallocated momentary buffers for directions that need a temporary buffer
-      (allocated once and reused to avoid per-iteration malloc/free) */
-    double *prealloc_momentary[4];
-    for (int pi = 0; pi < 4; ++pi) prealloc_momentary[pi] = NULL;
+  double t_tot_inj = 0;
+  double t_tot_calc = 0;
+  double t_tot_send = 0;
+  double t_tot_border = 0; /* time spent computing border buffers only */
+  /* preallocated momentary buffers for directions that need a temporary buffer
+  (allocated once and reused to avoid per-iteration malloc/free) */
+  double *prealloc_momentary[4];
+  for (int pi = 0; pi < 4; ++pi)
+    prealloc_momentary[pi] = (double *)malloc(decomposedS[_y_] * sizeof(double));
+  
   // somehow fit this in a cycle
   //  important for the future
   //  int i, j, k;
   //  #pragma omp parallel private(i,k) means that i and k will be unique for each thread and not shared
-  
+
   MPI_Request reqs[8];
   /* per-iteration compute timer (shared across threads in the parallel region) */
+
   double t_start_calc_iter = 0.0;
+  double t1 = MPI_Wtime(); /* take wall-clock time */
 
-  #pragma omp parallel
+#pragma omp parallel
   {
-  for (int iter = 0; iter < Niterations; ++iter)
-  {
-    #ifdef VERBOSE
-      printf("TASK%d: beforeOMP %d\n", Rank,S[0]);
+    for (int iter = 0; iter < Niterations; ++iter)
+    {
+#ifdef VERBOSE
+      printf("TASK%d: beforeOMP %d\n", Rank, S[0]);
       fflush(stdout);
-    #endif
-    
-    
-    /* new energy from sources */
-
-    /* -------------------------------------- */
-
-    // [A] fill the buffers, and/or make the buffers' pointers pointing to the correct position
-
-    // [B] perfoem the halo communications
-    //     (1) use Send / Recv
-    //     (2) use Isend / Irecv
-    //         --> can you overlap communication and compution in this way?
-
-    // [C] copy the haloes data
-
-    /* --------------------------------------  */
-    /* update grid points */
+#endif
 
 #ifdef VERBOSE
-          printf("TASK%d: thread %d: injecting\n", Rank, myid);
-          fflush(stdout);
+      printf("TASK%d: thread %d: injecting\n", Rank, myid);
+      fflush(stdout);
 #endif
-        #pragma omp master
-        {
-          for (int ri = 0; ri < 8; ++ri) reqs[ri] = MPI_REQUEST_NULL;
-          double t_start_inj_local = MPI_Wtime();
+/*------------------------------------------------------ injection ------------------------------------------------------*/
+#pragma omp master
+      {
+        for (int ri = 0; ri < 8; ++ri)
+          reqs[ri] = MPI_REQUEST_NULL;
+        double t_start_inj_local = MPI_Wtime();
 
-          ret = inject_energy(periodic, Nsources_local, Sources_local, energy_per_source, &planes[current], N);
+        ret = inject_energy(periodic, Nsources_local, Sources_local, energy_per_source, &planes[current], N);
 
-          double t_elapsed_inj = MPI_Wtime() - t_start_inj_local;
-          t_tot_inj += t_elapsed_inj;
-        }
-        #pragma omp barrier
-    /* New parallel pattern:
-       - one thread posts the Irecv
-       - worker threads compute the border buffers
-       - single thread issues non-blocking Isend for all directions (only this thread calls MPI send)
-       - worker threads (and the master) run update_plane concurrently
-       - master waits for all requests and frees per-iteration allocated buffers
-    */
-
-    double *send_buffers[4];
-    atomic_int ready[4];
-    for (int si = 0; si < 4; ++si) {
-      send_buffers[si] = NULL;
-    }
-
-      /* single: post all the Irecv operations (only one thread makes MPI calls)
-         this pins MPI usage to a single thread (MPI_THREAD_FUNNELED safe)
+        double t_elapsed_inj = MPI_Wtime() - t_start_inj_local;
+        t_tot_inj += t_elapsed_inj;
+      }
+      //this barrier migh be useless since injection is ultra fast
+      #pragma omp barrier
+      /* New parallel pattern:
+         - one thread posts the Irecv
+         - worker threads compute the border buffers
+         - single thread issues non-blocking Isend for all directions (only this thread calls MPI send)
+         - worker threads (and the master) run update_plane concurrently
+         - master waits for all requests and frees per-iteration allocated buffers
       */
-      #pragma omp master
+
+      double *send_buffers[4];
+      atomic_int ready[4];
+      for (int si = 0; si < 4; ++si)
+      {
+        send_buffers[si] = NULL;
+      }
+
+/* single: post all the Irecv operations (only one thread makes MPI calls)
+   this pins MPI usage to a single thread (MPI_THREAD_FUNNELED safe)
+*/
+#pragma omp master
       {
         /* measure actual communication waiting time (time spent waiting for completion)
             by timing the Waitall that ensures completion of sends/recvs */
-          double t_comm_wait_start = MPI_Wtime();
+        double t_comm_wait_start = MPI_Wtime();
         for (int i = 0; i < 4; ++i)
         {
           int x_or_y = i >> 1;
           MPI_Irecv(buffers[!current][i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[4 + i]);
         }
 
-
         for (int i = 0; i < 4; ++i)
-      {
-        int x_or_y = i >> 1;
-        double const *old_border = border_ptr[current][i];
-        double const *old_buffer = buffers[current][i];
-        double *new_border = border_ptr[!current][i];
+        {
+          int x_or_y = i >> 1;
+          double const *old_border = border_ptr[current][i];
+          double const *old_buffer = buffers[current][i];
+          double *new_border = border_ptr[!current][i];
           double *momentary_buffer = NULL;
 
-        if (x_or_y)
-        {
-          /* allocate once per-direction on demand and reuse */
-          if (prealloc_momentary[i] == NULL) {
-            prealloc_momentary[i] = (double *)malloc(decomposedS[_y_] * sizeof(double));
+          if (x_or_y)
+          {
+            momentary_buffer = prealloc_momentary[i];
+            send_buffers[i] = momentary_buffer;
           }
-          momentary_buffer = prealloc_momentary[i];
-          send_buffers[i] = momentary_buffer;
-        }
-        else
-        {
-          /* for the other directions we can use the new_border buffer directly */
-          send_buffers[i] = new_border;
+          else
+          {
+            /* for the other directions we can use the new_border buffer directly */
+            send_buffers[i] = new_border;
+          }
+
+          /* measure border computation only */
+          double t_border_start = MPI_Wtime();
+          update_border_calc(i, decomposedS, old_border, old_buffer, new_border, momentary_buffer);
+          double t_border_elapsed = MPI_Wtime() - t_border_start;
+          t_tot_border += t_border_elapsed;
+
+          /* mark this direction as ready for sending */
+          atomic_store_explicit(&ready[i], 1, memory_order_release);
+          MPI_Isend(send_buffers[i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[i]);
         }
 
-        /* measure border computation only */
-        double t_border_start = MPI_Wtime();
-        update_border_calc(i, decomposedS, old_border, old_buffer, new_border, momentary_buffer);
-        double t_border_elapsed = MPI_Wtime() - t_border_start;
-        t_tot_border += t_border_elapsed;
-
-        /* mark this direction as ready for sending */
-        atomic_store_explicit(&ready[i], 1, memory_order_release);
-        MPI_Isend(send_buffers[i], decomposedS[x_or_y], MPI_DOUBLE, neighbours[i], iter, myCOMM_WORLD, &reqs[i]);
-      }
-          
-          MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
-          double t_comm_wait = MPI_Wtime() - t_comm_wait_start;
-          t_tot_send += t_comm_wait;
+        MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
+        double t_comm_wait = MPI_Wtime() - t_comm_wait_start;
+        t_tot_send += t_comm_wait;
 
         /* buffers are preallocated and reused, do not free here */
       }
-      #pragma omp single nowait
+#pragma omp single nowait
       {
-        #pragma omp atomic write
+#pragma omp atomic write
         t_start_calc_iter = MPI_Wtime();
-        #pragma omp flush(t_start_calc_iter)
+#pragma omp flush(t_start_calc_iter)
       }
 
       /* compute the inner points in parallel; `update_plane` contains the
@@ -210,89 +195,88 @@ int main(int argc, char **argv)
          across available threads */
       update_plane(periodic, N, &planes[current], &planes[!current]);
 
-      #pragma omp barrier
+#pragma omp barrier
 
-      #pragma omp single nowait
+#pragma omp single nowait
       {
         double temp;
-        #pragma omp atomic read
-        temp=t_start_calc_iter;
+#pragma omp atomic read
+        temp = t_start_calc_iter;
         double t_elapsed_calc = MPI_Wtime() - temp;
         t_tot_calc += t_elapsed_calc;
       }
-    
+
       /* swap plane indexes for the new iteration */
-    current = !current;
-    /* output if needed */
-        /* output if needed */
+      current = !current;
+      /* output if needed */
+      /* output if needed */
 #ifdef OUTPUTENERGY
-    if (output_energy_stat_perstep)
-    {
+      if (output_energy_stat_perstep)
+      {
         output_energy_stat(iter, &planes[!current], (iter + 1) * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
 #ifdef MATRIX
         print_matrix(Rank, Ntasks, planes[!current].size[_x_], planes[!current].size[_y_], planes[!current].data, buffers[!current], myCOMM_WORLD);
 #endif
-
-    }
+      }
 #endif
+    }
   }
-}
 
   t1 = MPI_Wtime() - t1;
 
+  /* ensure any outstanding non-blocking sends complete before next step */
+  MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
 
-      /* ensure any outstanding non-blocking sends complete before next step */
-      MPI_Waitall(8, reqs, MPI_STATUS_IGNORE);
-  
-    double total_time_mean, computation_time_mean, border_time_mean, communication_time_mean, energy_injection_time_mean;
+  double total_time_mean, computation_time_mean, border_time_mean, communication_time_mean, energy_injection_time_mean;
 
- // consider the mean for each time variable across all tasks
+  // consider the mean for each time variable across all tasks
   MPI_Reduce(&t1, &total_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
   MPI_Reduce(&t_tot_calc, &computation_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
   MPI_Reduce(&t_tot_border, &border_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
   MPI_Reduce(&t_tot_send, &communication_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
-  //MPI_Reduce(&t_tot_, &waiting_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
+  // MPI_Reduce(&t_tot_, &waiting_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
   MPI_Reduce(&t_tot_inj, &energy_injection_time_mean, 1, MPI_DOUBLE, MPI_SUM, 0, myCOMM_WORLD);
 
   // add the code to print the time to post process them
-  if (Rank == 0 || Ntasks == 1) {
+  if (Rank == 0 || Ntasks == 1)
+  {
     const char *job_name = getenv("JOB_NAME");
 
     const char *output_dir = "output/border-checkifarrived-inner";
-      // Build full path
+    // Build full path
     char filename[512];
     snprintf(filename, sizeof(filename), "%s/%s.csv", output_dir, job_name);
 
     FILE *f = fopen(filename, "w");
-      if (!f) {
-          perror("fopen");
-          exit(1);
-      }
+    if (!f)
+    {
+      perror("fopen");
+      exit(1);
+    }
 
-            fprintf(f,"Mean_total_time,Mean_Computation_time,Mean_Border_time,Mean_Communication_time,Mean_Injection_time,Grid_x,Grid_y,N_iterations\n");
-            fprintf(f,"%f,%f,%f,%f,%f,%u,%u,%d\n",
-              total_time_mean/Ntasks,
-              computation_time_mean/Ntasks,
-              border_time_mean/Ntasks,
-              communication_time_mean/Ntasks,
-              energy_injection_time_mean/Ntasks,
-              S[_x_],
-              S[_y_],
-              Niterations);
-        fflush(f);
-      fclose(f);
-
-    
+    fprintf(f, "Mean_total_time,Mean_Computation_time,Mean_Border_time,Mean_Communication_time,Mean_Injection_time,Grid_x,Grid_y,N_iterations\n");
+    fprintf(f, "%f,%f,%f,%f,%f,%u,%u,%d\n",
+            total_time_mean / Ntasks,
+            computation_time_mean / Ntasks,
+            border_time_mean / Ntasks,
+            communication_time_mean / Ntasks,
+            energy_injection_time_mean / Ntasks,
+            S[_x_],
+            S[_y_],
+            Niterations);
+    fflush(f);
+    fclose(f);
   }
 
   output_energy_stat(-1, &planes[!current], Niterations * Nsources * energy_per_source, Rank, &myCOMM_WORLD);
   printf("PROCESS %d: time taken %f, computing %f, border %f, communicating %f, injecting %f \n", Rank, t1, t_tot_calc, t_tot_border, t_tot_send, t_tot_inj);
   fflush(stdout);
 
-
   /* free preallocated momentary buffers allocated by master */
-  for (int pi = 0; pi < 4; ++pi) {
-    if (prealloc_momentary[pi] != NULL) {
+  for (int pi = 0; pi < 4; ++pi)
+  {
+    if (prealloc_momentary[pi] != NULL)
+    {
       free(prealloc_momentary[pi]);
       prealloc_momentary[pi] = NULL;
     }
