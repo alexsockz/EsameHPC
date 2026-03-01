@@ -190,7 +190,8 @@ int main(int argc, char **argv)
          appropriate OpenMP `for` pragma so calling it here will distribute work
          across available threads */
       update_plane(periodic, N, &planes[current], &planes[!current]);
-
+      //TODO figure out this time, this is wrong 
+      //also figure out why the plot has comm time so low while the comm time in the fucntion is not small
       #pragma omp single nowait
       {
         double t_elapsed_calc = MPI_Wtime() - t_start_calc_iter;
