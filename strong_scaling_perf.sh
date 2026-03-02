@@ -15,7 +15,7 @@ for NODES in 1 2 4 8 16; do
     JOB_NAME="strong_scaling_${NODES}n_${TOTAL_TASKS}t"
 
     # Export PERF=1 to enable cache-miss measurement by default; PERF_OUTPUT set per job
-    PERF_OUTPUT="output/perf/${JOB_NAME}.perf"
+    PERF_OUTPUT="output/border-checkifarrived-inner-16k/perf/${JOB_NAME}.perf"
     sbatch --nodes=${NODES} \
     --ntasks-per-node=${NTASKS_PER_NODE} \
      --cpus-per-task=${OMP_THREADS} \

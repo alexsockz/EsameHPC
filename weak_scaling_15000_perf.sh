@@ -30,7 +30,7 @@ for NODES in 1 2 4 8 16; do
     fi
 
     JOB_NAME="weak_scale_bigger_grid_${NODES}n_${TOTAL_TASKS}t"
-    PERF_OUTPUT="output/perf/${JOB_NAME}.perf"
+    PERF_OUTPUT="output/border-checkifarrived-inner-16k/perf/${JOB_NAME}.perf"
 
     sbatch --nodes=${NODES} \
            --ntasks=${TOTAL_TASKS} \

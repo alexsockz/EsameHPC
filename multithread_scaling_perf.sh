@@ -12,7 +12,7 @@ GRID_SIZE_Y=16384
 
 for OMP_THREADS in 1 2 4 8 16 32 56 84 112; do
     JOB_NAME="thread_scaling_${OMP_THREADS}_threads"
-    PERF_OUTPUT="output/perf/${JOB_NAME}.perf"
+    PERF_OUTPUT="output/border-checkifarrived-inner-16k/perf/${JOB_NAME}.perf"
 
     sbatch --export=ALL,GRID_SIZE_X=${GRID_SIZE_X},GRID_SIZE_Y=${GRID_SIZE_Y},N_STEPS=${N_STEPS},OMP_THREADS=${OMP_THREADS},JOB_NAME=${JOB_NAME},TOTAL_TASKS=${TOTAL_TASKS},PERF=1,PERF_OUTPUT=${PERF_OUTPUT} \
     --nodes=${NODES} \
