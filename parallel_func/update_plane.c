@@ -47,22 +47,7 @@ int update_plane(const int periodic,
             result += (sum_i + sum_j);
             new[IDX(i, j)] = result;
         }
-
-    if (periodic)
-    {
-        if (N[_x_] == 1)
-        {
-            // propagate the boundaries as needed
-            // check the serial version
-        }
-
-        if (N[_y_] == 1)
-        {
-            // propagate the boundaries as needed
-            // check the serial version
-        }
-    }
-
+        
 #undef IDX
     return 0;
 }

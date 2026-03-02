@@ -52,6 +52,7 @@ int main(int argc, char **argv)
     MPI_Comm_dup(MPI_COMM_WORLD, &myCOMM_WORLD);
   }
 
+  double t1 = MPI_Wtime(); /* take wall-clock time */
   /* argument checking and setting */
   int ret = initialize(&myCOMM_WORLD, Rank, Ntasks, argc, argv, &S, &N, &periodic, &output_energy_stat_perstep, &verbose,
                        neighbours, &Niterations,
@@ -89,7 +90,7 @@ int main(int argc, char **argv)
   /* per-iteration compute timer (shared across threads in the parallel region) */
 
   double t_start_calc_iter = 0.0;
-  double t1 = MPI_Wtime(); /* take wall-clock time */
+  
 
 #pragma omp parallel
   {

@@ -6,7 +6,7 @@ N_STEPS=500
 TASKS_PER_NODE=8
 OMP_THREADS=14
 CPUS_PER_TASK=${OMP_THREADS}
-LOCAL_SIZE=16384
+LOCAL_SIZE=32768
 GRID_SIZE_X=${LOCAL_SIZE}
 GRID_SIZE_Y=${LOCAL_SIZE}
 
@@ -30,7 +30,7 @@ for NODES in 1 2 4 8 16; do
     fi
 
     JOB_NAME="weak_scale_bigger_grid_${NODES}n_${TOTAL_TASKS}t"
-    PERF_OUTPUT="output/border-checkifarrived-inner-16k/perf/${JOB_NAME}.perf"
+    PERF_OUTPUT="output/border-checkifarrived-inner-32k/perf/${JOB_NAME}.perf"
 
     sbatch --nodes=${NODES} \
            --ntasks=${TOTAL_TASKS} \
