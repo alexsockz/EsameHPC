@@ -1,45 +1,25 @@
-#!/bin/bash -l
-#SBATCH --job-name=openmp_test
-#SBATCH --partition=dcgp_usr_prod
-#SBATCH --account=UTS25_Tornator_0
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=112
-#SBATCH --time=00:45:00
-#SBATCH --exclusive
-#SBATCH --mem=0
+#!/bin/bash
 
-# Paths
-OMPI_DIR=$HOME/openmpi-5
-EXEC=./bin/stencil_parallel
+echo "Threads scaling: single node with multiple threads"
 
-# Environment
-module purge
-module load gcc/12.2.0
-export OMPI_DIR=$HOME/openmpi-5
-export PATH=$OMPI_DIR/bin:$PATH
-export LD_LIBRARY_PATH=$OMPI_DIR/lib:$HOME/lib:$LD_LIBRARY_PATH
+NODES=1
+N_TASKS_PER_NODE=1
+TOTAL_TASKS=1
+N_STEPS=1000
+GRID_SIZE_X=15000
+GRID_SIZE_Y=15000
 
-# Performance Settings
-export OMP_DISPLAY_AFFINITY=TRUE
-export OMP_PLACES=cores
-export OMP_PROC_BIND=close
 
-echo "Starting OpenMP scaling test (1 MPI Rank)..."
+for OMP_THREADS in 1 2 4 8 16 32 56 84 112; do
+    JOB_NAME="thread_scaling_${OMP_THREADS}_threads"
+    PERF_OUTPUT="output/perf/${JOB_NAME}.perf"
 
-# Scaling Loop (1 to 128 threads)
-for THREADS in 1 2 4 8 16 32 56 84 112; do
-    export OMP_NUM_THREADS=$THREADS
-
-    echo "Running with $THREADS threads..."
-
-    mpirun -np ${SLURM_NTASKS} \
-        --report-bindings \
-        --bind-to none \
-        --tag-output \
-        ${EXEC} -x 16384 -y 16384 -n 500 -p 0 -e 500 -E 25 -f 0.05 -m 1 >> run.out
-
-    mpirun -np ${SLURM_NTASKS} \
-    --map-by ppr:${SLURM_NTASKS_PER_NODE}:node:PE=${SLURM_CPUS_PER_TASK} \
-    $WRAPPER ${EXEC} -x $GRID -y $GRID -n 500 -p 0 -e 500 -E 25 -f 0.05 -m 1 -v 0 -o 0 >> run.out
+    sbatch --export=ALL,GRID_SIZE_X=${GRID_SIZE_X},GRID_SIZE_Y=${GRID_SIZE_Y},N_STEPS=${N_STEPS},OMP_THREADS=${OMP_THREADS},JOB_NAME=${JOB_NAME},TOTAL_TASKS=${TOTAL_TASKS},PERF=1,PERF_OUTPUT=${PERF_OUTPUT} \
+    --nodes=${NODES} \
+    --ntasks-per-node=${N_TASKS_PER_NODE} \
+    --cpus-per-task=${OMP_THREADS} \
+    --job-name=${JOB_NAME} \
+    go_dcgp.sh
 done
+
+echo "All threads scaling jobs submitted"
