@@ -14,7 +14,12 @@ for NODES in 1 2 4 8 16; do
     
     JOB_NAME="strong_scaling_${NODES}n_${TOTAL_TASKS}t"
 
-    sbatch --nodes=${NODES} --ntasks-per-node=${NTASKS_PER_NODE} --cpus-per-task=${OMP_THREADS} --job-name=${JOB_NAME} --export=ALL,GRID_SIZE_X=${GRID_SIZE_X},GRID_SIZE_Y=${GRID_SIZE_Y},N_STEPS=${N_STEPS},OMP_THREADS=${OMP_THREADS},JOB_NAME=${JOB_NAME},TOTAL_TASKS=${TOTAL_TASKS} go_dcgp.sh
+    sbatch --nodes=${NODES} \
+    --ntasks-per-node=${NTASKS_PER_NODE} \
+    --cpus-per-task=${OMP_THREADS} \
+    --job-name=${JOB_NAME} \
+    --export=ALL,GRID_SIZE_X=${GRID_SIZE_X},GRID_SIZE_Y=${GRID_SIZE_Y},N_STEPS=${N_STEPS},OMP_THREADS=${OMP_THREADS},JOB_NAME=${JOB_NAME},TOTAL_TASKS=${TOTAL_TASKS},PERF=0 \
+    go_dcgp.sh
 done
 
 echo "All Strong Scaling jobs submitted."

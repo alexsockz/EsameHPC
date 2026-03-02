@@ -2,11 +2,11 @@
 
 echo "Weak scaling: multinode scalability study with constant workload per resource"
 
-N_STEPS=500
+N_STEPS=1000
 TASKS_PER_NODE=8
 OMP_THREADS=14
 CPUS_PER_TASK=${OMP_THREADS}
-LOCAL_SIZE=4000
+LOCAL_SIZE=15000
 GRID_SIZE_X=${LOCAL_SIZE}
 GRID_SIZE_Y=${LOCAL_SIZE}
 
@@ -29,14 +29,14 @@ for NODES in 1 2 4 8 16; do
         GRID_SIZE_Y=$(( LOCAL_SIZE * 4 ))
     fi
 
-    JOB_NAME="weak_scale_${NODES}n_${TOTAL_TASKS}t"
+    JOB_NAME="weak_scale_bigger_grid_${NODES}n_${TOTAL_TASKS}t"
 
     sbatch --nodes=${NODES} \
            --ntasks=${TOTAL_TASKS} \
            --ntasks-per-node=${TASKS_PER_NODE} \
            --cpus-per-task=${CPUS_PER_TASK} \
            --job-name=${JOB_NAME} \
-           --export=ALL,GRID_SIZE_X=${GRID_SIZE_X},GRID_SIZE_Y=${GRID_SIZE_Y},N_STEPS=${N_STEPS},OMP_THREADS=${OMP_THREADS},JOB_NAME=${JOB_NAME},TOTAL_TASKS=${TOTAL_TASKS},PERF=0 \
+           --export=ALL,GRID_SIZE_X=${GRID_SIZE_X},GRID_SIZE_Y=${GRID_SIZE_Y},N_STEPS=${N_STEPS},OMP_THREADS=${OMP_THREADS},JOB_NAME=${JOB_NAME},TOTAL_TASKS=${TOTAL_TASKS},PERF=1,PERF_OUTPUT=${PERF_OUTPUT} \
            go_dcgp.sh
 
     echo "Submitting job with ${NODES} nodes, ${TOTAL_TASKS} total tasks, grid size ${GRID_SIZE_X}x${GRID_SIZE_Y}"

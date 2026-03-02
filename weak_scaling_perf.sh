@@ -30,14 +30,15 @@ for NODES in 1 2 4 8 16; do
     fi
 
     JOB_NAME="weak_scale_${NODES}n_${TOTAL_TASKS}t"
+    PERF_OUTPUT="output/perf/${JOB_NAME}.perf"
 
     sbatch --nodes=${NODES} \
            --ntasks=${TOTAL_TASKS} \
            --ntasks-per-node=${TASKS_PER_NODE} \
            --cpus-per-task=${CPUS_PER_TASK} \
            --job-name=${JOB_NAME} \
-           --export=ALL,GRID_SIZE_X=${GRID_SIZE_X},GRID_SIZE_Y=${GRID_SIZE_Y},N_STEPS=${N_STEPS},OMP_THREADS=${OMP_THREADS},JOB_NAME=${JOB_NAME},TOTAL_TASKS=${TOTAL_TASKS} \
-           go_dcgp_perf.sh
+           --export=ALL,GRID_SIZE_X=${GRID_SIZE_X},GRID_SIZE_Y=${GRID_SIZE_Y},N_STEPS=${N_STEPS},OMP_THREADS=${OMP_THREADS},JOB_NAME=${JOB_NAME},TOTAL_TASKS=${TOTAL_TASKS},PERF=1,PERF_OUTPUT=${PERF_OUTPUT} \
+           go_dcgp.sh
 
     echo "Submitting job with ${NODES} nodes, ${TOTAL_TASKS} total tasks, grid size ${GRID_SIZE_X}x${GRID_SIZE_Y}"
 done
