@@ -2,11 +2,11 @@
 
 echo "Weak scaling: multinode scalability study with constant workload per resource"
 
-N_STEPS=1000
+N_STEPS=500
 TASKS_PER_NODE=8
 OMP_THREADS=14
 CPUS_PER_TASK=${OMP_THREADS}
-LOCAL_SIZE=15000
+LOCAL_SIZE=16384
 GRID_SIZE_X=${LOCAL_SIZE}
 GRID_SIZE_Y=${LOCAL_SIZE}
 

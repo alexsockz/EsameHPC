@@ -5,9 +5,9 @@ echo "Threads scaling: single node with multiple threads"
 NODES=1
 N_TASKS_PER_NODE=1
 TOTAL_TASKS=1
-N_STEPS=1000
-GRID_SIZE_X=15000
-GRID_SIZE_Y=15000
+N_STEPS=500
+GRID_SIZE_X=16384
+GRID_SIZE_Y=16384
 
 
 for OMP_THREADS in 1 2 4 8 16 32 56 84 112; do
