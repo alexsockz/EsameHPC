@@ -1,2 +1,2 @@
 Mean_total_time,Mean_Computation_time,Mean_Border_time,Mean_Communication_time,Mean_Injection_time,Grid_x,Grid_y,N_iterations
-33.746087,33.608463,12.527385,12.531457,0.000590,32768,32768,500
+33.998920,33.871425,13.364689,13.368018,0.000467,32768,32768,500

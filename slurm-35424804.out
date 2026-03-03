@@ -1,0 +1,83 @@
+Loading openmpi/4.1.6--gcc--12.2.0
+  Loading requirement: gcc/12.2.0-binut2.41
+[lrdn3575.leonardo.local:740343] MCW rank 0 bound to socket 0[core 0[hwt 0]], socket 0[core 1[hwt 0]], socket 0[core 2[hwt 0]], socket 0[core 3[hwt 0]], socket 0[core 4[hwt 0]], socket 0[core 5[hwt 0]], socket 0[core 6[hwt 0]], socket 0[core 7[hwt 0]], socket 0[core 8[hwt 0]], socket 0[core 9[hwt 0]], socket 0[core 10[hwt 0]], socket 0[core 11[hwt 0]], socket 0[core 12[hwt 0]], socket 0[core 13[hwt 0]]: [B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././././././././././././././././././././././././././././././.][./././././././././././././././././././././././././././././././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3575.leonardo.local:740343] MCW rank 1 bound to socket 0[core 14[hwt 0]], socket 0[core 15[hwt 0]], socket 0[core 16[hwt 0]], socket 0[core 17[hwt 0]], socket 0[core 18[hwt 0]], socket 0[core 19[hwt 0]], socket 0[core 20[hwt 0]], socket 0[core 21[hwt 0]], socket 0[core 22[hwt 0]], socket 0[core 23[hwt 0]], socket 0[core 24[hwt 0]], socket 0[core 25[hwt 0]], socket 0[core 26[hwt 0]], socket 0[core 27[hwt 0]]: [././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././././././././././././././././.][./././././././././././././././././././././././././././././././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3575.leonardo.local:740343] MCW rank 2 bound to socket 0[core 28[hwt 0]], socket 0[core 29[hwt 0]], socket 0[core 30[hwt 0]], socket 0[core 31[hwt 0]], socket 0[core 32[hwt 0]], socket 0[core 33[hwt 0]], socket 0[core 34[hwt 0]], socket 0[core 35[hwt 0]], socket 0[core 36[hwt 0]], socket 0[core 37[hwt 0]], socket 0[core 38[hwt 0]], socket 0[core 39[hwt 0]], socket 0[core 40[hwt 0]], socket 0[core 41[hwt 0]]: [././././././././././././././././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././.][./././././././././././././././././././././././././././././././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3575.leonardo.local:740343] MCW rank 3 bound to socket 0[core 42[hwt 0]], socket 0[core 43[hwt 0]], socket 0[core 44[hwt 0]], socket 0[core 45[hwt 0]], socket 0[core 46[hwt 0]], socket 0[core 47[hwt 0]], socket 0[core 48[hwt 0]], socket 0[core 49[hwt 0]], socket 0[core 50[hwt 0]], socket 0[core 51[hwt 0]], socket 0[core 52[hwt 0]], socket 0[core 53[hwt 0]], socket 0[core 54[hwt 0]], socket 0[core 55[hwt 0]]: [././././././././././././././././././././././././././././././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B][./././././././././././././././././././././././././././././././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3575.leonardo.local:740343] MCW rank 4 bound to socket 1[core 56[hwt 0]], socket 1[core 57[hwt 0]], socket 1[core 58[hwt 0]], socket 1[core 59[hwt 0]], socket 1[core 60[hwt 0]], socket 1[core 61[hwt 0]], socket 1[core 62[hwt 0]], socket 1[core 63[hwt 0]], socket 1[core 64[hwt 0]], socket 1[core 65[hwt 0]], socket 1[core 66[hwt 0]], socket 1[core 67[hwt 0]], socket 1[core 68[hwt 0]], socket 1[core 69[hwt 0]]: [./././././././././././././././././././././././././././././././././././././././././././././././././././././././.][B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././././././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3575.leonardo.local:740343] MCW rank 5 bound to socket 1[core 70[hwt 0]], socket 1[core 71[hwt 0]], socket 1[core 72[hwt 0]], socket 1[core 73[hwt 0]], socket 1[core 74[hwt 0]], socket 1[core 75[hwt 0]], socket 1[core 76[hwt 0]], socket 1[core 77[hwt 0]], socket 1[core 78[hwt 0]], socket 1[core 79[hwt 0]], socket 1[core 80[hwt 0]], socket 1[core 81[hwt 0]], socket 1[core 82[hwt 0]], socket 1[core 83[hwt 0]]: [./././././././././././././././././././././././././././././././././././././././././././././././././././././././.][././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3575.leonardo.local:740343] MCW rank 6 bound to socket 1[core 84[hwt 0]], socket 1[core 85[hwt 0]], socket 1[core 86[hwt 0]], socket 1[core 87[hwt 0]], socket 1[core 88[hwt 0]], socket 1[core 89[hwt 0]], socket 1[core 90[hwt 0]], socket 1[core 91[hwt 0]], socket 1[core 92[hwt 0]], socket 1[core 93[hwt 0]], socket 1[core 94[hwt 0]], socket 1[core 95[hwt 0]], socket 1[core 96[hwt 0]], socket 1[core 97[hwt 0]]: [./././././././././././././././././././././././././././././././././././././././././././././././././././././././.][././././././././././././././././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././.]
+[lrdn3575.leonardo.local:740343] MCW rank 7 bound to socket 1[core 98[hwt 0]], socket 1[core 99[hwt 0]], socket 1[core 100[hwt 0]], socket 1[core 101[hwt 0]], socket 1[core 102[hwt 0]], socket 1[core 103[hwt 0]], socket 1[core 104[hwt 0]], socket 1[core 105[hwt 0]], socket 1[core 106[hwt 0]], socket 1[core 107[hwt 0]], socket 1[core 108[hwt 0]], socket 1[core 109[hwt 0]], socket 1[core 110[hwt 0]], socket 1[core 111[hwt 0]]: [./././././././././././././././././././././././././././././././././././././././././././././././././././././././.][././././././././././././././././././././././././././././././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3576.leonardo.local:1860684] MCW rank 8 bound to socket 0[core 0[hwt 0]], socket 0[core 1[hwt 0]], socket 0[core 2[hwt 0]], socket 0[core 3[hwt 0]], socket 0[core 4[hwt 0]], socket 0[core 5[hwt 0]], socket 0[core 6[hwt 0]], socket 0[core 7[hwt 0]], socket 0[core 8[hwt 0]], socket 0[core 9[hwt 0]], socket 0[core 10[hwt 0]], socket 0[core 11[hwt 0]], socket 0[core 12[hwt 0]], socket 0[core 13[hwt 0]]: [B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././././././././././././././././././././././././././././././.][./././././././././././././././././././././././././././././././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3576.leonardo.local:1860684] MCW rank 9 bound to socket 0[core 14[hwt 0]], socket 0[core 15[hwt 0]], socket 0[core 16[hwt 0]], socket 0[core 17[hwt 0]], socket 0[core 18[hwt 0]], socket 0[core 19[hwt 0]], socket 0[core 20[hwt 0]], socket 0[core 21[hwt 0]], socket 0[core 22[hwt 0]], socket 0[core 23[hwt 0]], socket 0[core 24[hwt 0]], socket 0[core 25[hwt 0]], socket 0[core 26[hwt 0]], socket 0[core 27[hwt 0]]: [././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././././././././././././././././.][./././././././././././././././././././././././././././././././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3576.leonardo.local:1860684] MCW rank 10 bound to socket 0[core 28[hwt 0]], socket 0[core 29[hwt 0]], socket 0[core 30[hwt 0]], socket 0[core 31[hwt 0]], socket 0[core 32[hwt 0]], socket 0[core 33[hwt 0]], socket 0[core 34[hwt 0]], socket 0[core 35[hwt 0]], socket 0[core 36[hwt 0]], socket 0[core 37[hwt 0]], socket 0[core 38[hwt 0]], socket 0[core 39[hwt 0]], socket 0[core 40[hwt 0]], socket 0[core 41[hwt 0]]: [././././././././././././././././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././.][./././././././././././././././././././././././././././././././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3576.leonardo.local:1860684] MCW rank 11 bound to socket 0[core 42[hwt 0]], socket 0[core 43[hwt 0]], socket 0[core 44[hwt 0]], socket 0[core 45[hwt 0]], socket 0[core 46[hwt 0]], socket 0[core 47[hwt 0]], socket 0[core 48[hwt 0]], socket 0[core 49[hwt 0]], socket 0[core 50[hwt 0]], socket 0[core 51[hwt 0]], socket 0[core 52[hwt 0]], socket 0[core 53[hwt 0]], socket 0[core 54[hwt 0]], socket 0[core 55[hwt 0]]: [././././././././././././././././././././././././././././././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B][./././././././././././././././././././././././././././././././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3576.leonardo.local:1860684] MCW rank 12 bound to socket 1[core 56[hwt 0]], socket 1[core 57[hwt 0]], socket 1[core 58[hwt 0]], socket 1[core 59[hwt 0]], socket 1[core 60[hwt 0]], socket 1[core 61[hwt 0]], socket 1[core 62[hwt 0]], socket 1[core 63[hwt 0]], socket 1[core 64[hwt 0]], socket 1[core 65[hwt 0]], socket 1[core 66[hwt 0]], socket 1[core 67[hwt 0]], socket 1[core 68[hwt 0]], socket 1[core 69[hwt 0]]: [./././././././././././././././././././././././././././././././././././././././././././././././././././././././.][B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././././././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3576.leonardo.local:1860684] MCW rank 13 bound to socket 1[core 70[hwt 0]], socket 1[core 71[hwt 0]], socket 1[core 72[hwt 0]], socket 1[core 73[hwt 0]], socket 1[core 74[hwt 0]], socket 1[core 75[hwt 0]], socket 1[core 76[hwt 0]], socket 1[core 77[hwt 0]], socket 1[core 78[hwt 0]], socket 1[core 79[hwt 0]], socket 1[core 80[hwt 0]], socket 1[core 81[hwt 0]], socket 1[core 82[hwt 0]], socket 1[core 83[hwt 0]]: [./././././././././././././././././././././././././././././././././././././././././././././././././././././././.][././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././././././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3576.leonardo.local:1860684] MCW rank 14 bound to socket 1[core 84[hwt 0]], socket 1[core 85[hwt 0]], socket 1[core 86[hwt 0]], socket 1[core 87[hwt 0]], socket 1[core 88[hwt 0]], socket 1[core 89[hwt 0]], socket 1[core 90[hwt 0]], socket 1[core 91[hwt 0]], socket 1[core 92[hwt 0]], socket 1[core 93[hwt 0]], socket 1[core 94[hwt 0]], socket 1[core 95[hwt 0]], socket 1[core 96[hwt 0]], socket 1[core 97[hwt 0]]: [./././././././././././././././././././././././././././././././././././././././././././././././././././././././.][././././././././././././././././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B/./././././././././././././.]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+[lrdn3576.leonardo.local:1860684] MCW rank 15 bound to socket 1[core 98[hwt 0]], socket 1[core 99[hwt 0]], socket 1[core 100[hwt 0]], socket 1[core 101[hwt 0]], socket 1[core 102[hwt 0]], socket 1[core 103[hwt 0]], socket 1[core 104[hwt 0]], socket 1[core 105[hwt 0]], socket 1[core 106[hwt 0]], socket 1[core 107[hwt 0]], socket 1[core 108[hwt 0]], socket 1[core 109[hwt 0]], socket 1[core 110[hwt 0]], socket 1[core 111[hwt 0]]: [./././././././././././././././././././././././././././././././././././././././././././././././././././././././.][././././././././././././././././././././././././././././././././././././././././././B/B/B/B/B/B/B/B/B/B/B/B/B/B]
+
+libgomp: Invalid value for environment variable OMP_NUM_THREADS
+500
+500
+500
+500
+500
+500
+500
+500
+500
+500
+500
+500
+500
+500
+500
+500
+PROCESS 10: time taken 14.450832, computing 14.443480, border 1.815389, communicating 4.152152, injecting 0.000259 
+PROCESS 8: time taken 14.450989, computing 14.443250, border 1.709353, communicating 4.278804, injecting 0.000096 
+PROCESS 14: time taken 14.364745, computing 14.358808, border 1.890794, communicating 3.930611, injecting 0.000105 
+PROCESS 13: time taken 14.364904, computing 14.358364, border 1.937490, communicating 3.803498, injecting 0.000304 
+PROCESS 11: time taken 14.451272, computing 14.444072, border 1.790221, communicating 4.085205, injecting 0.000096 
+PROCESS 9: time taken 14.451010, computing 14.444366, border 1.840625, communicating 4.012651, injecting 0.000288 
+PROCESS 15: time taken 14.364269, computing 14.356327, border 1.898422, communicating 3.775668, injecting 0.000117 
+PROCESS 12: time taken 14.382507, computing 14.376216, border 1.736976, communicating 3.904747, injecting 0.000221 
+PROCESS 2: time taken 14.453037, computing 14.443761, border 1.792866, communicating 4.146236, injecting 0.000236 
+PROCESS 6: time taken 14.454236, computing 14.447216, border 1.820357, communicating 4.130644, injecting 0.000342 
+PROCESS 3: time taken 14.453382, computing 14.447630, border 1.943828, communicating 3.883764, injecting 0.000096 
+PROCESS 7: time taken 14.455227, computing 14.447731, border 1.719395, communicating 4.040553, injecting 0.000239 
+PROCESS 4: time taken 14.455049, computing 14.448962, border 1.724844, communicating 4.006468, injecting 0.000203 
+PROCESS 5: time taken 14.454452, computing 14.448566, border 1.762807, communicating 4.065068, injecting 0.000160 
+PROCESS 1: time taken 14.453109, computing 14.448079, border 1.888404, communicating 3.979591, injecting 0.000130 
+total injected energy is 10000, system energy is 8520.34 ( in avg 7.93519e-06 per grid point)
+PROCESS 0: time taken 14.384345, computing 14.378353, border 1.978835, communicating 3.675757, injecting 0.000255 

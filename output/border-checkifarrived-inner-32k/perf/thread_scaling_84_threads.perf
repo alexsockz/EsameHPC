@@ -1,14 +1,14 @@
-# started on Tue Mar  3 12:14:53 2026
+# started on Tue Mar  3 15:48:41 2026
 
 
  Performance counter stats for './bin/parallel -n 500 -x 32768 -y 32768 -p 1 -o 0':
 
-      119746215351      cache-misses              #   97,458 % of all cache refs    
-      122869789055      cache-references                                            
+      119512613400      cache-misses              #   97,509 % of all cache refs    
+      122566248931      cache-references                                            
 
-      44,970851793 seconds time elapsed
+      44,356223384 seconds time elapsed
 
-    2884,847301000 seconds user
-     484,148495000 seconds sys
+    2883,798694000 seconds user
+     528,999123000 seconds sys
 
 
