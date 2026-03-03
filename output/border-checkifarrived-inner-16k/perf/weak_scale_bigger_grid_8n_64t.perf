@@ -1,10 +1,10 @@
-# started on Mon Mar  2 14:59:38 2026
+# started on Tue Mar  3 00:57:07 2026
 
 
  Performance counter stats for 'system wide':
 
-       29782669160      cache-misses              #   94,022 % of all cache refs    
-       31676400468      cache-references                                            
+       28496064199      cache-misses              #   94,180 % of all cache refs    
+       30257063833      cache-references                                            
 
-      10,738983561 seconds time elapsed
+       9,342795050 seconds time elapsed
 

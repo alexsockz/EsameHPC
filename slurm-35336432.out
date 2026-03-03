@@ -1,5 +1,0 @@
-Loading openmpi/4.1.6--gcc--12.2.0
-  Loading requirement: gcc/12.2.0-binut2.41
-500
-total injected energy is 2000, system energy is 2000 ( in avg 7.45058e-06 per grid point)
-PROCESS 0: time taken 203.578626, computing 202.469091, border 1.108719, communicating 1.109073, injecting 0.000174 
